@@ -3,10 +3,7 @@ package bank_service.bank_service.service;
 import bank_service.bank_service.dto.CardFullInfoDTO;
 import bank_service.bank_service.dto.CardWithUsernameDTO;
 import bank_service.bank_service.exception.AppException;
-import bank_service.bank_service.model.Account;
-import bank_service.bank_service.model.Balance;
-import bank_service.bank_service.model.Card;
-import bank_service.bank_service.model.Category;
+import bank_service.bank_service.model.*;
 import bank_service.bank_service.repository.AccountRepository;
 import bank_service.bank_service.repository.BalanceRepository;
 import bank_service.bank_service.repository.CardRepository;
@@ -72,5 +69,18 @@ public class CategoryService {
         redisTemplate.opsForValue().set(redisKey, category, 10, TimeUnit.MINUTES);
 
         return category;
+    }
+
+    public void createDefaultCategories(String accountId) {
+        List<Category> defaultCategories = List.of(
+                Category.builder().categoryName("Ăn uống").categoryType(CategoryType.EXPENSE).accountId(accountId).build(),
+                Category.builder().categoryName("Đi lại").categoryType(CategoryType.EXPENSE).accountId(accountId).build(),
+                Category.builder().categoryName("Mua sắm").categoryType(CategoryType.EXPENSE).accountId(accountId).build(),
+                Category.builder().categoryName("Hóa đơn").categoryType(CategoryType.EXPENSE).accountId(accountId).build(),
+                Category.builder().categoryName("Thu nhập").categoryType(CategoryType.INCOME).accountId(accountId).build()
+        );
+
+        categoryRepository.saveAll(defaultCategories);
+        clearCategoryCache(accountId, null); // Clear cache for this account
     }
 }
