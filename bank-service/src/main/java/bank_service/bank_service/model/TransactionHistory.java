@@ -36,4 +36,7 @@ public class TransactionHistory {
 
     @UpdateTimestamp
     private LocalDateTime completedAt; // Thời điểm giao dịch hoàn thành
+
+    @Column(nullable = false)
+    private String categoryId;
 }

@@ -31,7 +31,7 @@ public class TransactionService {
     private final BalanceService balanceService;
 
     @Transactional
-    public Transaction createTransaction(String fromAccountId, String toAccountId, BigDecimal amount) {
+    public Transaction createTransaction(String fromAccountId, String toAccountId, BigDecimal amount, String categoryId) {
         if (fromAccountId.equals(toAccountId)) {
             throw new AppException("Cannot transfer to the same account");
         }
@@ -60,6 +60,7 @@ public class TransactionService {
         transaction.setAmount(amount);
         transaction.setTransactionType(TransactionType.TRANSFER);
         transaction.setStatus(TransactionStatus.PENDING);
+        transaction.setCategoryId(categoryId);
 
         String verificationCode = generateOtp();
         transaction.setVerificationCode(verificationCode);
@@ -188,7 +189,7 @@ public class TransactionService {
         return savedTx;
     }
     @Transactional
-    public Transaction recordDepositTransaction(String accountId, BigDecimal amount) {
+    public Transaction recordDepositTransaction(String accountId, BigDecimal amount, String categoryId) {
         // Gọi BalanceService để thực hiện nạp tiền
         balanceService.deposit(accountId, amount);
 
@@ -199,6 +200,7 @@ public class TransactionService {
         transaction.setAmount(amount);
         transaction.setTransactionType(TransactionType.DEPOSIT);
         transaction.setStatus(TransactionStatus.APPROVED);
+        transaction.setCategoryId(categoryId);
 
         //return transactionRepository.save(transaction);
         Transaction savedTx = transactionRepository.save(transaction);
@@ -216,7 +218,7 @@ public class TransactionService {
 
     }
     @Transactional
-    public Transaction recordWithdrawalTransaction(String accountId, BigDecimal amount) {
+    public Transaction recordWithdrawalTransaction(String accountId, BigDecimal amount, String categoryId) {
         // Gọi BalanceService để thực hiện rút tiền
         balanceService.withdraw(accountId, amount);
 
@@ -227,6 +229,7 @@ public class TransactionService {
         transaction.setAmount(amount);
         transaction.setTransactionType(TransactionType.WITHDRAWAL);
         transaction.setStatus(TransactionStatus.APPROVED);
+        transaction.setCategoryId(categoryId);
 
         //return transactionRepository.save(transaction);
         Transaction savedTx = transactionRepository.save(transaction);
@@ -280,6 +283,7 @@ public class TransactionService {
         history.setStatus(tx.getStatus());
         history.setCompletedAt(LocalDateTime.now());
         history.setTransactionType(tx.getTransactionType());
+        history.setCategoryId(tx.getCategoryId());
         transactionHistoryRepository.save(history);
     }
     @Transactional(readOnly = true)

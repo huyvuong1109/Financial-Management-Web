@@ -24,8 +24,8 @@ public class AuthService {
     private final AccountRepository accountRepository;
     private final PasswordEncoder passwordEncoder;
     private final JwtService jwtService;
-    //private final RedisTemplate<String, Object> redisTemplate;
     private final StringRedisTemplate redis;
+    private final CategoryService categoryService;
 
 
     public AuthResponse register(RegisterRequest request) {
@@ -45,11 +45,14 @@ public class AuthService {
                 .role(Role.USER)
                 .build();
 
-        accountRepository.save(account);
+        Account savedAccount = accountRepository.save(account);
 
-        String token = jwtService.generateToken(account.getAccountId(), account.getRole());
+        // Create default categories for the new user
+        categoryService.createDefaultCategories(savedAccount.getAccountId());
 
-        saveTokenToRedis(account.getAccountId(), token);
+        String token = jwtService.generateToken(savedAccount.getAccountId(), savedAccount.getRole());
+
+        saveTokenToRedis(savedAccount.getAccountId(), token);
         return AuthResponse.builder()
                 .token(token)
                 .build();

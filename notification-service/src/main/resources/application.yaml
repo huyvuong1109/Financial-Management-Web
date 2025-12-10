@@ -1,13 +1,13 @@
 spring:
   artemis:
-    broker-url: tcp://artemis:61616
+    broker-url: tcp://localhost:61616
     user: artemis
     password: artemis
     mode: native
   jms:
     pub-sub-domain: false
   datasource:
-    url: jdbc:mysql://host.docker.internal:3306/bank_service
+    url: jdbc:mysql://localhost:3307/bank_service
     username: root
     password: root
   jpa:
