@@ -4,7 +4,7 @@ server:
     context-path: /bankservice
 spring:
   datasource:
-    url: jdbc:mysql://localhost:3307/bank_service
+    url: jdbc:mysql://localhost:3306/bank_service
     username: root
     password: root
   jpa:
