@@ -37,8 +37,9 @@ public class TransactionController {
         String fromAccountId = (String) request.get("fromAccountId");
         String toAccountId = (String) request.get("toAccountId");
         BigDecimal amount = new BigDecimal(request.get("amount").toString());
+        String categoryId = (String) request.get("categoryId"); // Read categoryId
 
-        Transaction tx = transactionService.createTransaction(fromAccountId, toAccountId, amount);
+        Transaction tx = transactionService.createTransaction(fromAccountId, toAccountId, amount, categoryId);
         return ResponseEntity.ok(tx);
     }
 
@@ -87,7 +88,8 @@ public class TransactionController {
     ) {
         //String accountId = (String) request.get("accountId");
         BigDecimal amount = new BigDecimal(request.get("amount").toString());
-        Transaction tx = transactionService.recordDepositTransaction(accountId, amount);
+        String categoryId = (String) request.get("categoryId"); // Read categoryId
+        Transaction tx = transactionService.recordDepositTransaction(accountId, amount, categoryId);
         return ResponseEntity.ok(tx);
     }
 
@@ -99,6 +101,7 @@ public class TransactionController {
     ) {
         //String accountId = (String) request.get("accountId");
         BigDecimal amount = new BigDecimal(request.get("amount").toString());
+        String categoryId = (String) request.get("categoryId"); // Read categoryId
 
         // Đảm bảo người dùng chỉ có thể rút tiền từ tài khoản của chính mình
         String requesterId = authentication.getName();
@@ -110,7 +113,7 @@ public class TransactionController {
                     .body("You are not allowed to withdraw from this account.");
         }
 
-        Transaction tx = transactionService.recordWithdrawalTransaction(accountId, amount);
+        Transaction tx = transactionService.recordWithdrawalTransaction(accountId, amount, categoryId);
         return ResponseEntity.ok(tx);
     }
     @GetMapping("/my-history")
