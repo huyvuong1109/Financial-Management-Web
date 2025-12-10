@@ -47,4 +47,7 @@ public class Transaction {
 
     @UpdateTimestamp
     private LocalDateTime updatedAt;
+
+    @Column(nullable = false)
+    private String categoryId;
 }
