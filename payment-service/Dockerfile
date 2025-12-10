@@ -1,14 +1,27 @@
-# base image JDK 21
-FROM openjdk:21-jdk-slim
+# Stage 1: Build
+FROM eclipse-temurin:21-jdk-alpine AS builder
 
-# Đặt thư mục làm việc trong container
 WORKDIR /app
 
-# Copy file JAR đã build vào container
-COPY target/payment-service-0.0.1-SNAPSHOT.jar app.jar
+# Copy Maven wrapper và pom.xml
+COPY mvnw .
+COPY .mvn .mvn
+COPY pom.xml .
 
-# Cấu hình cổng ứng dụng
+# Tải dependencies trước (cache layer)
+RUN chmod +x mvnw && ./mvnw dependency:go-offline -B
+
+# Copy source code và build
+COPY src src
+RUN ./mvnw clean package -DskipTests
+
+# Stage 2: Run
+FROM eclipse-temurin:21-jre-alpine
+
+WORKDIR /app
+
+COPY --from=builder /app/target/payment-service-0.0.1-SNAPSHOT.jar app.jar
+
 EXPOSE 8081
 
-# Chạy ứng dụng khi container start
 ENTRYPOINT ["java", "-jar", "app.jar"]

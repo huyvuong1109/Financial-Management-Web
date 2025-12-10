@@ -71,13 +71,49 @@ public class CategoryService {
         return category;
     }
 
+    // Get category by ID
+    public Optional<Category> getCategoryById(Long id) {
+        return categoryRepository.findById(id);
+    }
+
+    // Update category
+    public Optional<Category> updateCategory(Long id, Category categoryUpdate, String accountId) {
+        return categoryRepository.findById(id)
+                .filter(category -> category.getAccountId().equals(accountId))
+                .map(category -> {
+                    category.setCategoryName(categoryUpdate.getCategoryName());
+                    category.setCategoryType(categoryUpdate.getCategoryType());
+                    Category saved = categoryRepository.save(category);
+                    clearCategoryCache(accountId, id);
+                    return saved;
+                });
+    }
+
+    // Delete category
+    public boolean deleteCategory(Long id, String accountId) {
+        return categoryRepository.findById(id)
+                .filter(category -> category.getAccountId().equals(accountId))
+                .map(category -> {
+                    categoryRepository.delete(category);
+                    clearCategoryCache(accountId, id);
+                    return true;
+                })
+                .orElse(false);
+    }
+
     public void createDefaultCategories(String accountId) {
         List<Category> defaultCategories = List.of(
                 Category.builder().categoryName("Ăn uống").categoryType(CategoryType.EXPENSE).accountId(accountId).build(),
                 Category.builder().categoryName("Đi lại").categoryType(CategoryType.EXPENSE).accountId(accountId).build(),
                 Category.builder().categoryName("Mua sắm").categoryType(CategoryType.EXPENSE).accountId(accountId).build(),
                 Category.builder().categoryName("Hóa đơn").categoryType(CategoryType.EXPENSE).accountId(accountId).build(),
-                Category.builder().categoryName("Thu nhập").categoryType(CategoryType.INCOME).accountId(accountId).build()
+                Category.builder().categoryName("Giải trí").categoryType(CategoryType.EXPENSE).accountId(accountId).build(),
+                Category.builder().categoryName("Sức khỏe").categoryType(CategoryType.EXPENSE).accountId(accountId).build(),
+                Category.builder().categoryName("Giáo dục").categoryType(CategoryType.EXPENSE).accountId(accountId).build(),
+                Category.builder().categoryName("Lương").categoryType(CategoryType.INCOME).accountId(accountId).build(),
+                Category.builder().categoryName("Thưởng").categoryType(CategoryType.INCOME).accountId(accountId).build(),
+                Category.builder().categoryName("Đầu tư").categoryType(CategoryType.INCOME).accountId(accountId).build(),
+                Category.builder().categoryName("Khác").categoryType(CategoryType.INCOME).accountId(accountId).build()
         );
 
         categoryRepository.saveAll(defaultCategories);

@@ -1,0 +1,33 @@
+# Local configuration files - don't push to git
+docker-compose.override.yaml
+docker-compose.local.yaml
+
+# Local application configs
+**/application-local.yaml
+**/application-local.yml
+
+# IDE
+.idea/
+*.iml
+*.iws
+*.ipr
+.vscode/
+
+# Build outputs
+target/
+build/
+*.class
+*.jar
+*.war
+
+# Logs
+*.log
+logs/
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Node modules (for bank-ui)
+node_modules/
+dist/
