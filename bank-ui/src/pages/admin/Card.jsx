@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import AppBar from "./AppBar";
 import Sidebar from "./Sidebar";
 import "./Card.css";
+import { BANK_SERVICE_API } from '../../config/api';
 
 export default function Card() {
   const [cards, setCards] = useState([]);
@@ -11,7 +12,7 @@ export default function Card() {
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const navigate = useNavigate();
 
-  const API_BASE = "/bankservice/api/cards";
+  const API_BASE = `${BANK_SERVICE_API}/api/cards`;
   const token = localStorage.getItem("token");
 
   const fetchCards = () => {

@@ -4,6 +4,7 @@ import axios from "axios";
 import AppBar from "./AppBar";
 import Sidebar from "./Sidebar";
 import "./CardDetails.css";
+import { BANK_SERVICE_API } from '../../config/api';
 
 export default function CardDetails() {
   const { cardId } = useParams();
@@ -20,7 +21,7 @@ export default function CardDetails() {
     const fetchCardDetails = async () => {
       try {
         const res = await axios.get(
-          `/bankservice/api/cards/${cardId}`,
+          `${BANK_SERVICE_API}/api/cards/${cardId}`,
           {
             headers: {
               "Content-Type": "application/json",
@@ -43,7 +44,7 @@ export default function CardDetails() {
     }
     try {
       await axios.post(
-        `/bankservice/transactions/deposit/${card.accountId}`,
+        `${BANK_SERVICE_API}/transactions/deposit/${card.accountId}`,
         {
           amount: parseFloat(depositAmount),
         },
@@ -70,7 +71,7 @@ export default function CardDetails() {
     }
     try {
       await axios.post(
-        `/bankservice/transactions/withdraw/${card.accountId}`,
+        `${BANK_SERVICE_API}/transactions/withdraw/${card.accountId}`,
         {
           amount: parseFloat(withdrawAmount),
         },

@@ -3,7 +3,8 @@ import AppBar from './AppBar';
 import Sidebar from './Sidebar'; 
 import axios from 'axios';
 import { useNavigate } from 'react-router-dom';
-import './Transactions.css'; 
+import './Transactions.css';
+import { BANK_SERVICE_API } from '../../config/api'; 
 
 const Transactions = () => {
     const [transactions, setTransactions] = useState([]);
@@ -30,7 +31,7 @@ const Transactions = () => {
         setLoading(true);
         setError(null);
         try {
-            const url = `/bankservice/transactions/all?page=${page}&size=${size}&transactionType=${transactionType}&status=${status}`;
+            const url = `${BANK_SERVICE_API}/transactions/all?page=${page}&size=${size}&transactionType=${transactionType}&status=${status}`;
             
             const response = await axios.get(url, {
                 headers: {
@@ -59,7 +60,7 @@ const Transactions = () => {
         setIsUpdateLoading(true);
         setError(null);
         try {
-            const url = `/bankservice/transactions/${selectedTransactionId}/approve`;
+            const url = `${BANK_SERVICE_API}/transactions/${selectedTransactionId}/approve`;
             await axios.post(url, {}, { // Gửi POST request rỗng
                 headers: {
                     "Authorization": `Bearer ${token}`,
@@ -82,7 +83,7 @@ const Transactions = () => {
         setIsUpdateLoading(true);
         setError(null);
         try {
-            const url = `/bankservice/transactions/${selectedTransactionId}/reject`;
+            const url = `${BANK_SERVICE_API}/transactions/${selectedTransactionId}/reject`;
             await axios.post(url, {}, { // Gửi POST request rỗng
                 headers: {
                     "Authorization": `Bearer ${token}`,
