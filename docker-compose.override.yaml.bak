@@ -1,0 +1,61 @@
+# File này ghi đè cấu hình docker-compose.yaml để sử dụng các container riêng của bạn
+# File này KHÔNG được push lên git, chỉ dùng local
+
+services:
+  # Ghi đè cấu hình bank-service để kết nối đến các container riêng
+  bank-service:
+    environment:
+      # Sử dụng container mysql-moi
+      SPRING_DATASOURCE_URL: jdbc:mysql://host.docker.internal:3306/bank_service
+      SPRING_DATASOURCE_USERNAME: root
+      SPRING_DATASOURCE_PASSWORD: 123456
+      # Sử dụng Redis container riêng (busy_ride)
+      SPRING_DATA_REDIS_HOST: host.docker.internal
+      # Sử dụng Artemis container riêng (heuristic_hamilton)
+      SPRING_ARTEMIS_BROKER_URL: tcp://host.docker.internal:61616
+      PAYMENT_SERVICE_URL: http://payment-service:8081
+    depends_on:
+      mysql:
+        condition: service_started
+        required: false
+      redis:
+        condition: service_started
+        required: false
+      artemis:
+        condition: service_started
+        required: false
+
+  # Ghi đè cấu hình payment-service
+  payment-service:
+    environment:
+      SPRING_ARTEMIS_BROKER_URL: tcp://host.docker.internal:61616
+    depends_on:
+      artemis:
+        condition: service_started
+        required: false
+
+  # Ghi đè cấu hình notification-service
+  notification-service:
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:mysql://host.docker.internal:3306/bank_service
+      SPRING_DATASOURCE_USERNAME: root
+      SPRING_DATASOURCE_PASSWORD: 123456
+      SPRING_ARTEMIS_BROKER_URL: tcp://host.docker.internal:61616
+    depends_on:
+      mysql:
+        condition: service_started
+        required: false
+      artemis:
+        condition: service_started
+        required: false
+
+  # Disable các service không cần thiết (đã chạy riêng)
+  mysql:
+    profiles:
+      - disabled
+  redis:
+    profiles:
+      - disabled
+  artemis:
+    profiles:
+      - disabled
