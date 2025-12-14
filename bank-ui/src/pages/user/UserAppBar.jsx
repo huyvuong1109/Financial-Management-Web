@@ -198,6 +198,17 @@ export default function UserAppBar() {
           >
             Báo cáo
           </Button>
+          <Button 
+            color="inherit" 
+            component={Link} 
+            to="/budget"
+            sx={{ 
+              "&:hover": { backgroundColor: "rgba(255,255,255,0.1)" },
+              borderRadius: 1
+            }}
+          >
+            Ngân sách
+          </Button>
         </Box>
   
         {/* Icon thông báo */}
