@@ -82,11 +82,12 @@ export default function TransactionHistory() {
                             <TableRow sx={{ backgroundColor: '#f5f5f5' }}>
                                 <TableCell>ID Giao Dịch</TableCell>
                                 <TableCell>Ngày Giao Dịch</TableCell>
+                                <TableCell>Thẻ Gửi</TableCell>
+                                <TableCell>Thẻ Nhận</TableCell>
+                                <TableCell>Danh Mục</TableCell>
                                 <TableCell>Số Tiền</TableCell>
                                 <TableCell>Loại Giao Dịch</TableCell>
                                 <TableCell>Trạng Thái</TableCell>
-                                <TableCell>Người Gửi</TableCell>
-                                <TableCell>Người Nhận</TableCell>
                             </TableRow>
                         </TableHead>
                         <TableBody>
@@ -95,16 +96,17 @@ export default function TransactionHistory() {
                                     <TableRow key={transaction.id}>
                                         <TableCell>{transaction.id}</TableCell>
                                         <TableCell>{new Date(transaction.completedAt).toLocaleString()}</TableCell>
+                                        <TableCell>{transaction.fromCardId}</TableCell>
+                                        <TableCell>{transaction.toCardId}</TableCell>
+                                        <TableCell>{transaction.categoryId}</TableCell>
                                         <TableCell>{transaction.amount} VNĐ</TableCell>
                                         <TableCell>{transaction.transactionType}</TableCell>
                                         <TableCell>{transaction.status}</TableCell>
-                                        <TableCell>{transaction.fromAccountId}</TableCell>
-                                        <TableCell>{transaction.toAccountId}</TableCell>
                                     </TableRow>
                                 ))
                             ) : (
                                 <TableRow>
-                                    <TableCell colSpan={7} align="center">
+                                    <TableCell colSpan={8} align="center">
                                         Không có giao dịch nào
                                     </TableCell>
                                 </TableRow>
