@@ -17,6 +17,7 @@ import PublicRoute from './components/PublicRoute';
 import Transactions from './pages/admin/Transactions';
 import TransactionHistory from "./pages/user/TransactionHistory";
 import FinancialReports from "./pages/user/FinancialReports";
+import Budget from './pages/admin/Budget';
 
 ReactDOM.createRoot(document.getElementById('root')).render(
 
@@ -34,6 +35,7 @@ ReactDOM.createRoot(document.getElementById('root')).render(
         <Route path="/Card" element={<Card />} />
         <Route path="/Card/:cardId" element={<CardDetails />} />
         <Route path="Transactions" element={<Transactions />} />
+        <Route path="/Budget" element={<Budget />} />
       </Route>
 
       {/* User routes */}

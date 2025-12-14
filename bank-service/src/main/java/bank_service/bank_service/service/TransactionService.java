@@ -29,6 +29,7 @@ public class TransactionService {
     private final PaymentClient paymentClient;
     private final TransactionHistoryRepository transactionHistoryRepository;
     private final BalanceService balanceService;
+    private final BudgetService budgetService;
 
     @Transactional
     public Transaction createTransaction(String fromAccountId, String toAccountId, BigDecimal amount, String categoryId) {
@@ -147,6 +148,9 @@ public class TransactionService {
         Transaction savedTx = transactionRepository.save(tx);
         saveTransactionHistory(savedTx);
 
+        // Record budget spending
+        recordBudgetSpending(savedTx);
+
         PaymentRequest paymentRequest = new PaymentRequest();
         paymentRequest.setPaymentId(tx.getId());
         paymentRequest.setFromAccountId(tx.getFromAccountId());
@@ -235,6 +239,9 @@ public class TransactionService {
         Transaction savedTx = transactionRepository.save(transaction);
         saveTransactionHistory(savedTx);
 
+        // Record budget spending
+        recordBudgetSpending(savedTx);
+
         PaymentRequest paymentRequest = new PaymentRequest();
         paymentRequest.setPaymentId(transaction.getId());
         paymentRequest.setFromAccountId(transaction.getFromAccountId());
@@ -289,6 +296,31 @@ public class TransactionService {
     @Transactional(readOnly = true)
     public Page<TransactionHistory> getMyTransactionHistory(String userId, Pageable pageable) {
         return transactionHistoryRepository.findByFromAccountIdOrToAccountId(userId, userId, pageable);
+    }
+
+    /**
+     * Record spending to budget when transaction is approved
+     */
+    private void recordBudgetSpending(Transaction transaction) {
+        try {
+            // Only record spending for withdrawal and transfer transactions
+            if (transaction.getStatus() == TransactionStatus.APPROVED) {
+                if (transaction.getTransactionType() == TransactionType.WITHDRAWAL ||
+                    transaction.getTransactionType() == TransactionType.TRANSFER) {
+                    
+                    String accountId = transaction.getFromAccountId();
+                    Long categoryId = Long.parseLong(transaction.getCategoryId());
+                    String monthYear = java.time.YearMonth.now().toString();
+                    BigDecimal amount = transaction.getAmount();
+
+                    budgetService.recordSpending(accountId, categoryId, monthYear, amount);
+                }
+            }
+        } catch (Exception e) {
+            // Log error but don't fail transaction if budget recording fails
+            org.slf4j.LoggerFactory.getLogger(TransactionService.class)
+                    .warn("Error recording budget spending for transaction: {}", transaction.getId(), e);
+        }
     }
 }
 

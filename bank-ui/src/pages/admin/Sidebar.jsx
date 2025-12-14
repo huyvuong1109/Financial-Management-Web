@@ -18,6 +18,9 @@ export default function Sidebar({ isOpen }) {
         <li>
           <Link to="/Transactions">Transactions</Link>
         </li>
+        <li>
+          <Link to="/Budget">Budget Management</Link>
+        </li>
       </ul>
     </aside>
   );
