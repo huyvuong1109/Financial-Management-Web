@@ -25,6 +25,8 @@ public class Notification {
     private String fromAccountId;
     private String toAccountId;
     private BigDecimal amount;
+    private String fromCardId; // Thẻ gửi
+    private String toCardId;   // Thẻ nhận
     @CreatedDate
     private LocalDateTime createdAt;
 }

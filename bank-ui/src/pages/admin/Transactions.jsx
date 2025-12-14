@@ -144,6 +144,9 @@ const Transactions = () => {
                                 <th>ID</th>
                                 <th>fromAccountId</th>
                                 <th>toAccountId</th>
+                                <th>fromCardId</th>
+                                <th>toCardId</th>
+                                <th>categoryId</th>
                                 <th>Amount</th>
                                 <th>Transaction Type</th>
                                 <th>Status</th>
@@ -157,6 +160,9 @@ const Transactions = () => {
                                         <td>{t.id}</td>
                                         <td>{t.fromAccountId}</td>
                                         <td>{t.toAccountId}</td>
+                                        <td>{t.fromCardId ?? "-"}</td>
+                                        <td>{t.toCardId ?? "-"}</td>
+                                        <td>{t.categoryId ?? "-"}</td>
                                         <td>{t.amount?.toLocaleString('vi-VN')}</td>
                                         <td>{t.transactionType}</td>
                                         <td>{t.status}</td>
