@@ -98,7 +98,7 @@ Cho mỗi user (trừ admin):
 |------|----------|
 | **Categories Thu nhập** | Lương, Thưởng, Đầu tư, Freelance, Cho thuê, Khác (Thu) |
 | **Categories Chi tiêu** | Ăn uống, Di chuyển, Mua sắm, Giải trí, Học tập, Sức khỏe, Hóa đơn, Tiết kiệm, Khác (Chi) |
-| **Transactions** | 200-350 giao dịch cho 6 tháng gần nhất |
+| **Transactions** | ~400-700 giao dịch cho 12 tháng gần nhất |
 
 ---
 
@@ -116,6 +116,7 @@ Cho mỗi user (trừ admin):
 1. **Chỉ cần chạy 1 lần** - Nếu chạy lại sẽ tạo thêm transactions mới
 2. **Cần có user trước** - Đăng ký ít nhất 1 tài khoản user trước khi seed
 3. **Chỉ ADMIN mới seed được** - API yêu cầu quyền ADMIN
+4. **Timestamps:** `TransactionHistory` không nên dùng `@CreationTimestamp`/`@UpdateTimestamp` vì sẽ ghi đè `createdAt`/`completedAt` do seeder cung cấp. Nếu bạn gặp tình trạng "tất cả giao dịch đều cùng tháng", hãy kiểm tra model và đảm bảo các trường thời gian được lưu chính xác.
 
 ---
 

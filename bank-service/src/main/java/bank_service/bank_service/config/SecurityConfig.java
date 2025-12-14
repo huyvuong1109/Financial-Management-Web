@@ -33,6 +33,7 @@ public class SecurityConfig {
             .authorizeHttpRequests(auth -> auth
                 .requestMatchers("/api/auth/**").permitAll()
                 .requestMatchers("/bankservice/api/accounts/**").permitAll()
+                .requestMatchers("/api/admin/seed-data/public", "/api/admin/seed-data/public/**").permitAll() // Cho phép endpoint public seed-data
                 .anyRequest().authenticated()
             )
             .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))

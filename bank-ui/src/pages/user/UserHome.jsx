@@ -53,18 +53,39 @@ export default function UserHome() {
   ];
 
   return (
-    <Box sx={{ minHeight: "100vh", backgroundColor: "#f5f7fa" }}>
+    <Box
+      sx={{
+        minHeight: "100vh",
+        position: "relative",
+        "&::before": {
+          content: '""',
+          position: "fixed",
+          top: 0,
+          left: 0,
+          right: 0,
+          bottom: 0,
+          backgroundImage: "url('https://images.unsplash.com/photo-1551288049-bebda4e38f71?ixlib=rb-4.0.3&auto=format&fit=crop&w=2000&q=80')",
+          backgroundSize: "cover",
+          backgroundPosition: "center",
+          backgroundRepeat: "no-repeat",
+          filter: "blur(8px)",
+          opacity: 0.3,
+          zIndex: 0,
+        },
+      }}
+    >
       <UserAppBar />
       
       {/* Hero Section */}
       <Box
         sx={{
-          background: "linear-gradient(135deg, #667eea 0%, #764ba2 100%)",
+          background: "linear-gradient(135deg, rgba(102, 126, 234, 0.95) 0%, rgba(118, 75, 162, 0.95) 100%)",
           color: "white",
           py: { xs: 6, md: 8 },
           mb: 6,
           position: "relative",
           overflow: "hidden",
+          zIndex: 1,
           "&::before": {
             content: '""',
             position: "absolute",
@@ -109,7 +130,7 @@ export default function UserHome() {
       </Box>
 
       {/* Features Section */}
-      <Container maxWidth="lg" sx={{ mb: 8 }}>
+      <Container maxWidth="lg" sx={{ mb: 8, position: "relative", zIndex: 1 }}>
         <Fade in={true} timeout={1000}>
           <Box sx={{ textAlign: "center", mb: 6 }}>
             <Typography
@@ -117,7 +138,9 @@ export default function UserHome() {
               sx={{
                 fontWeight: "bold",
                 mb: 2,
-                color: "#333",
+                background: "linear-gradient(135deg, #667eea 0%, #764ba2 100%)",
+                WebkitBackgroundClip: "text",
+                WebkitTextFillColor: "transparent",
                 fontSize: { xs: "1.75rem", md: "2.125rem" },
               }}
             >
@@ -125,11 +148,11 @@ export default function UserHome() {
             </Typography>
             <Typography
               variant="body1"
-              color="text.secondary"
               sx={{
                 maxWidth: 600,
                 mx: "auto",
                 fontSize: { xs: "0.9rem", md: "1rem" },
+                color: "rgba(0, 0, 0, 0.7)",
               }}
             >
               Chọn một dịch vụ bên dưới để bắt đầu
@@ -152,10 +175,12 @@ export default function UserHome() {
                         overflow: "hidden",
                         background: feature.color,
                         color: "white",
+                        backdropFilter: "blur(10px)",
+                        boxShadow: "0 8px 32px rgba(0,0,0,0.2)",
                         transition: "all 0.4s cubic-bezier(0.4, 0, 0.2, 1)",
                         "&:hover": {
                           transform: "translateY(-12px) scale(1.02)",
-                          boxShadow: "0 20px 40px rgba(0,0,0,0.2)",
+                          boxShadow: "0 20px 40px rgba(0,0,0,0.3)",
                           "& .icon-wrapper": {
                             transform: "scale(1.1) rotate(5deg)",
                           },
@@ -250,15 +275,20 @@ export default function UserHome() {
         sx={{
           mt: 8,
           py: 4,
-          backgroundColor: "#fff",
-          borderTop: "1px solid #e0e0e0",
+          backgroundColor: "rgba(255, 255, 255, 0.95)",
+          backdropFilter: "blur(10px)",
+          borderTop: "1px solid rgba(0, 0, 0, 0.1)",
+          position: "relative",
+          zIndex: 1,
         }}
       >
         <Container maxWidth="lg">
           <Typography
             variant="body2"
-            color="text.secondary"
-            sx={{ textAlign: "center" }}
+            sx={{
+              textAlign: "center",
+              color: "rgba(0, 0, 0, 0.7)",
+            }}
           >
             © 2024 MyBank. Tất cả quyền được bảo lưu.
           </Typography>

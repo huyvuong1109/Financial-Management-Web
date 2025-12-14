@@ -60,30 +60,40 @@ public class DataSeeder {
     public String seedForAccount(String accountId) {
         log.info("Seeding data for account: {}", accountId);
         
-        // 1. Tạo Categories nếu chưa có
-        List<Category> categories = seedCategories(accountId);
+        // Kiểm tra account có tồn tại không
+        if (!accountRepository.existsById(accountId)) {
+            throw new RuntimeException("Account not found: " + accountId);
+        }
         
-        // 2. Tạo Transaction History
-        int transactionCount = seedTransactionHistory(accountId, categories);
-        
-        return "Created " + categories.size() + " categories and " + transactionCount + " transactions for account: " + accountId;
+        try {
+            // 1. Tạo Categories nếu chưa có
+            List<Category> categories = seedCategories(accountId);
+            
+            // 2. Tạo Transaction History
+            int transactionCount = seedTransactionHistory(accountId, categories);
+            
+            return "Created " + categories.size() + " categories and " + transactionCount + " transactions for account: " + accountId;
+        } catch (Exception e) {
+            log.error("Error seeding data for account {}: {}", accountId, e.getMessage(), e);
+            throw new RuntimeException("Failed to seed data for account " + accountId + ": " + e.getMessage(), e);
+        }
     }
 
     /**
-     * Tạo các danh mục mẫu cho user
+     * Tạo các danh mục mẫu cho user - Phù hợp với dự án hiện tại
      */
     private List<Category> seedCategories(String accountId) {
         List<Category> existingCategories = categoryRepository.findByAccountId(accountId);
         
         if (!existingCategories.isEmpty()) {
-            log.info("Categories already exist for account: {}", accountId);
+            log.info("Categories already exist for account: {}, using existing categories", accountId);
             return existingCategories;
         }
 
         List<Category> categories = new ArrayList<>();
 
-        // Danh mục THU NHẬP
-        String[] incomeNames = {"Lương", "Thưởng", "Đầu tư", "Freelance", "Cho thuê", "Khác (Thu)"};
+        // Danh mục THU NHẬP - Phù hợp với dự án
+        String[] incomeNames = {"Lương", "Thưởng", "Đầu tư", "Freelance", "Cho thuê", "Thu nhập khác"};
         for (String name : incomeNames) {
             Category category = Category.builder()
                     .categoryName(name)
@@ -93,9 +103,16 @@ public class DataSeeder {
             categories.add(categoryRepository.save(category));
         }
 
-        // Danh mục CHI TIÊU
-        String[] expenseNames = {"Ăn uống", "Di chuyển", "Mua sắm", "Giải trí", "Học tập", 
-                                  "Sức khỏe", "Hóa đơn", "Tiết kiệm", "Khác (Chi)"};
+        // Danh mục CHI TIÊU - Phù hợp với dự án (7 categories như đã định nghĩa)
+        String[] expenseNames = {
+            "Cá nhân",           // 👤
+            "Mua sắm – Dịch vụ", // 🛒
+            "Công việc",         // 💼
+            "Giáo dục",          // 🎓
+            "Y tế",              // 🏥
+            "Sinh hoạt",         // 🏠
+            "Khác"               // 📦
+        };
         for (String name : expenseNames) {
             Category category = Category.builder()
                     .categoryName(name)
@@ -110,7 +127,8 @@ public class DataSeeder {
     }
 
     /**
-     * Tạo lịch sử giao dịch mẫu cho 6 tháng gần nhất
+     * Tạo lịch sử giao dịch mẫu cho 12 tháng gần nhất
+     * Tạo data đều cho cả 12 tháng (từ tháng hiện tại trở về 11 tháng trước)
      */
     private int seedTransactionHistory(String accountId, List<Category> categories) {
         // Tách categories theo loại
@@ -129,16 +147,49 @@ public class DataSeeder {
         LocalDateTime now = LocalDateTime.now();
         List<TransactionHistory> transactions = new ArrayList<>();
 
-        // Tạo giao dịch cho 6 tháng gần nhất
-        for (int monthsAgo = 0; monthsAgo < 6; monthsAgo++) {
-            LocalDateTime monthStart = now.minusMonths(monthsAgo).withDayOfMonth(1).withHour(0).withMinute(0).withSecond(0);
+        // Tạo giao dịch cho 12 tháng gần nhất
+        // monthsAgo = 0: tháng hiện tại
+        // monthsAgo = 1: 1 tháng trước
+        // ...
+        // monthsAgo = 11: 11 tháng trước
+        for (int monthsAgo = 0; monthsAgo < 12; monthsAgo++) {
+            // Tính tháng cần seed: lấy tháng hiện tại rồi trừ đi số tháng
+            LocalDateTime targetMonth = now.minusMonths(monthsAgo);
+            
+            // Tính thời điểm bắt đầu của tháng (ngày 1, 00:00:00)
+            LocalDateTime monthStart = LocalDateTime.of(
+                    targetMonth.getYear(),
+                    targetMonth.getMonth(),
+                    1,
+                    0, 0, 0
+            );
+            
+            // Tính số ngày trong tháng
+            int daysInMonth = monthStart.toLocalDate().lengthOfMonth();
+            
+            // Tính thời điểm kết thúc của tháng (ngày cuối, 23:59:59)
+            LocalDateTime monthEnd = LocalDateTime.of(
+                    targetMonth.getYear(),
+                    targetMonth.getMonth(),
+                    daysInMonth,
+                    23, 59, 59
+            );
+            
+            log.info("Seeding transactions for month {} ({} to {})", 
+                    monthsAgo == 0 ? "current" : monthsAgo + " months ago",
+                    monthStart.toLocalDate(), 
+                    monthEnd.toLocalDate());
+            
+            int monthIncomeCount = 0;
+            int monthExpenseCount = 0;
+            int monthTransferCount = 0;
             
             // Tạo 15-25 giao dịch thu nhập mỗi tháng
-            int incomeCount = 15 + random.nextInt(11);
+            int incomeCount = 15 + random.nextInt(11); // 15-25 transactions
             for (int i = 0; i < incomeCount; i++) {
                 Category category = incomeCategories.get(random.nextInt(incomeCategories.size()));
                 BigDecimal amount = generateAmount(category.getCategoryName());
-                LocalDateTime transactionDate = generateRandomDateInMonth(monthStart);
+                LocalDateTime transactionDate = generateRandomDateInMonth(monthStart, monthEnd);
                 
                 TransactionHistory transaction = TransactionHistory.builder()
                         .id(UUID.randomUUID().toString())
@@ -152,14 +203,15 @@ public class DataSeeder {
                         .completedAt(transactionDate.plusMinutes(random.nextInt(60)))
                         .build();
                 transactions.add(transaction);
+                monthIncomeCount++;
             }
 
             // Tạo 20-35 giao dịch chi tiêu mỗi tháng
-            int expenseCount = 20 + random.nextInt(16);
+            int expenseCount = 20 + random.nextInt(16); // 20-35 transactions
             for (int i = 0; i < expenseCount; i++) {
                 Category category = expenseCategories.get(random.nextInt(expenseCategories.size()));
                 BigDecimal amount = generateExpenseAmount(category.getCategoryName());
-                LocalDateTime transactionDate = generateRandomDateInMonth(monthStart);
+                LocalDateTime transactionDate = generateRandomDateInMonth(monthStart, monthEnd);
                 
                 TransactionHistory transaction = TransactionHistory.builder()
                         .id(UUID.randomUUID().toString())
@@ -173,14 +225,15 @@ public class DataSeeder {
                         .completedAt(transactionDate.plusMinutes(random.nextInt(60)))
                         .build();
                 transactions.add(transaction);
+                monthExpenseCount++;
             }
 
             // Tạo 2-5 giao dịch chuyển khoản mỗi tháng
-            int transferCount = 2 + random.nextInt(4);
+            int transferCount = 2 + random.nextInt(4); // 2-5 transactions
             for (int i = 0; i < transferCount; i++) {
                 Category category = expenseCategories.get(random.nextInt(expenseCategories.size()));
-                BigDecimal amount = BigDecimal.valueOf(100000 + random.nextInt(900000));
-                LocalDateTime transactionDate = generateRandomDateInMonth(monthStart);
+                BigDecimal amount = BigDecimal.valueOf(100000 + random.nextInt(900000)); // 100k-1 triệu
+                LocalDateTime transactionDate = generateRandomDateInMonth(monthStart, monthEnd);
                 
                 TransactionHistory transaction = TransactionHistory.builder()
                         .id(UUID.randomUUID().toString())
@@ -194,12 +247,19 @@ public class DataSeeder {
                         .completedAt(transactionDate.plusMinutes(random.nextInt(60)))
                         .build();
                 transactions.add(transaction);
+                monthTransferCount++;
             }
+            
+                log.info("Created {} transactions for month {}: {} income, {} expense, {} transfer", 
+                    monthIncomeCount + monthExpenseCount + monthTransferCount,
+                    monthsAgo == 0 ? "current" : monthsAgo + " months ago",
+                    monthIncomeCount, monthExpenseCount, monthTransferCount);
         }
 
         // Lưu tất cả transactions
-        transactionHistoryRepository.saveAll(transactions);
-        log.info("Created {} transactions for account: {}", transactions.size(), accountId);
+            transactionHistoryRepository.saveAll(transactions);
+            log.info("Total created {} transactions for account: {} (distributed across 12 months)", 
+                transactions.size(), accountId);
         return transactions.size();
     }
 
@@ -218,34 +278,56 @@ public class DataSeeder {
     }
 
     /**
-     * Sinh số tiền chi tiêu dựa trên loại danh mục
+     * Sinh số tiền chi tiêu dựa trên loại danh mục - Phù hợp với categories mới
      */
     private BigDecimal generateExpenseAmount(String categoryName) {
         return switch (categoryName) {
-            case "Ăn uống" -> BigDecimal.valueOf(30000 + random.nextInt(200000));    // 30k-230k
-            case "Di chuyển" -> BigDecimal.valueOf(20000 + random.nextInt(100000));  // 20k-120k
-            case "Mua sắm" -> BigDecimal.valueOf(100000 + random.nextInt(2000000));  // 100k-2.1 triệu
-            case "Giải trí" -> BigDecimal.valueOf(50000 + random.nextInt(500000));   // 50k-550k
-            case "Học tập" -> BigDecimal.valueOf(200000 + random.nextInt(3000000));  // 200k-3.2 triệu
-            case "Sức khỏe" -> BigDecimal.valueOf(100000 + random.nextInt(1000000)); // 100k-1.1 triệu
-            case "Hóa đơn" -> BigDecimal.valueOf(200000 + random.nextInt(2000000));  // 200k-2.2 triệu
-            case "Tiết kiệm" -> BigDecimal.valueOf(1000000 + random.nextInt(5000000)); // 1-6 triệu
+            case "Cá nhân" -> BigDecimal.valueOf(50000 + random.nextInt(500000));        // 50k-550k (chi phí cá nhân)
+            case "Mua sắm – Dịch vụ" -> BigDecimal.valueOf(100000 + random.nextInt(3000000)); // 100k-3.1 triệu (mua sắm)
+            case "Công việc" -> BigDecimal.valueOf(200000 + random.nextInt(2000000));     // 200k-2.2 triệu (chi phí công việc)
+            case "Giáo dục" -> BigDecimal.valueOf(300000 + random.nextInt(5000000));     // 300k-5.3 triệu (học phí, sách vở)
+            case "Y tế" -> BigDecimal.valueOf(150000 + random.nextInt(2000000));         // 150k-2.15 triệu (khám bệnh, thuốc)
+            case "Sinh hoạt" -> BigDecimal.valueOf(200000 + random.nextInt(3000000));     // 200k-3.2 triệu (tiền nhà, điện nước)
+            case "Khác" -> BigDecimal.valueOf(50000 + random.nextInt(1000000));            // 50k-1.05 triệu
+            // Fallback cho categories cũ nếu có
+            case "Ăn uống" -> BigDecimal.valueOf(30000 + random.nextInt(200000));
+            case "Di chuyển" -> BigDecimal.valueOf(20000 + random.nextInt(100000));
+            case "Mua sắm" -> BigDecimal.valueOf(100000 + random.nextInt(2000000));
+            case "Giải trí" -> BigDecimal.valueOf(50000 + random.nextInt(500000));
+            case "Học tập" -> BigDecimal.valueOf(200000 + random.nextInt(3000000));
+            case "Sức khỏe" -> BigDecimal.valueOf(100000 + random.nextInt(1000000));
+            case "Hóa đơn" -> BigDecimal.valueOf(200000 + random.nextInt(2000000));
             default -> BigDecimal.valueOf(50000 + random.nextInt(500000)); // 50k-550k
         };
     }
 
     /**
-     * Sinh ngày ngẫu nhiên trong tháng
+     * Sinh ngày ngẫu nhiên trong khoảng thời gian của tháng
+     * Phân bố đều từ đầu tháng đến cuối tháng
+     * @param monthStart Thời điểm bắt đầu tháng (ngày 1, 00:00:00)
+     * @param monthEnd Thời điểm kết thúc tháng (ngày cuối, 23:59:59)
+     * @return Ngày giờ ngẫu nhiên trong khoảng thời gian đó
      */
-    private LocalDateTime generateRandomDateInMonth(LocalDateTime monthStart) {
+    private LocalDateTime generateRandomDateInMonth(LocalDateTime monthStart, LocalDateTime monthEnd) {
+        // Tính số ngày trong tháng
         int daysInMonth = monthStart.toLocalDate().lengthOfMonth();
+        
+        // Sinh ngày ngẫu nhiên (từ 1 đến số ngày trong tháng)
         int randomDay = 1 + random.nextInt(daysInMonth);
+        
+        // Sinh giờ và phút ngẫu nhiên
         int randomHour = random.nextInt(24);
         int randomMinute = random.nextInt(60);
+        int randomSecond = random.nextInt(60);
         
-        return monthStart
-                .withDayOfMonth(Math.min(randomDay, daysInMonth))
-                .withHour(randomHour)
-                .withMinute(randomMinute);
+        // Tạo LocalDateTime với ngày, giờ, phút, giây ngẫu nhiên
+        return LocalDateTime.of(
+                monthStart.getYear(),
+                monthStart.getMonth(),
+                randomDay,
+                randomHour,
+                randomMinute,
+                randomSecond
+        );
     }
 }

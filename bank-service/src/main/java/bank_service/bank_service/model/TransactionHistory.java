@@ -2,8 +2,8 @@ package bank_service.bank_service.model;
 
 import jakarta.persistence.*;
 import lombok.*;
-import org.hibernate.annotations.CreationTimestamp;
-import org.hibernate.annotations.UpdateTimestamp;
+// Timestamps are set by application when seeding transactions, so we don't use
+// automatic Hibernate timestamping here (which would overwrite seeded values).
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
@@ -31,10 +31,10 @@ public class TransactionHistory {
     @Column(nullable = false)
     private TransactionStatus status; // Trạng thái cuối cùng của giao dịch (APPROVED, FAILED, REJECTED)
 
-    @CreationTimestamp
+    // Khi seed dữ liệu, `createdAt` và `completedAt` được gán thủ công
+    // (không dùng @CreationTimestamp/@UpdateTimestamp để tránh bị ghi đè)
     private LocalDateTime createdAt; // Thời điểm bắt đầu giao dịch
 
-    @UpdateTimestamp
     private LocalDateTime completedAt; // Thời điểm giao dịch hoàn thành
 
     @Column(nullable = false)

@@ -40,8 +40,9 @@ private final StringRedisTemplate redis;
 
         String path = request.getRequestURI();
 
-        // Bỏ qua auth endpoints
-        if (path.startsWith("/bankservice/api/auth")) {
+        // Bỏ qua auth endpoints và public seed-data endpoints
+        if (path.startsWith("/bankservice/api/auth") || 
+            path.contains("/api/admin/seed-data/public")) {
             filterChain.doFilter(request, response);
             return;
         }
