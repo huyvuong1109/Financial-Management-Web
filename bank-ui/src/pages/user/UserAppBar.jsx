@@ -187,6 +187,17 @@ export default function UserAppBar() {
           >
             Lịch sử
           </Button>
+          <Button 
+            color="inherit" 
+            component={Link} 
+            to="/financial-reports"
+            sx={{ 
+              "&:hover": { backgroundColor: "rgba(255,255,255,0.1)" },
+              borderRadius: 1
+            }}
+          >
+            Báo cáo
+          </Button>
         </Box>
   
         {/* Icon thông báo */}

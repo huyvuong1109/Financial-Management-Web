@@ -5,6 +5,7 @@ import AccountBalanceIcon from "@mui/icons-material/AccountBalance";
 import CreditCardIcon from "@mui/icons-material/CreditCard";
 import SendIcon from "@mui/icons-material/Send";
 import HistoryIcon from "@mui/icons-material/History";
+import AssessmentIcon from "@mui/icons-material/Assessment";
 import UserAppBar from "./UserAppBar";
 
 export default function UserHome() {
@@ -40,6 +41,14 @@ export default function UserHome() {
       link: "/transaction-history",
       color: "linear-gradient(135deg, #43e97b 0%, #38f9d7 100%)",
       delay: 0.4,
+    },
+    {
+      title: "Báo cáo",
+      description: "Báo cáo tài chính và thống kê",
+      icon: <AssessmentIcon sx={{ fontSize: 56 }} />,
+      link: "/financial-reports",
+      color: "linear-gradient(135deg, #fa709a 0%, #fee140 100%)",
+      delay: 0.5,
     },
   ];
 

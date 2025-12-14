@@ -16,6 +16,7 @@ import Transfer from './pages/user/Transfer';
 import PublicRoute from './components/PublicRoute';
 import Transactions from './pages/admin/Transactions';
 import TransactionHistory from "./pages/user/TransactionHistory";
+import FinancialReports from "./pages/user/FinancialReports";
 
 ReactDOM.createRoot(document.getElementById('root')).render(
 
@@ -41,6 +42,7 @@ ReactDOM.createRoot(document.getElementById('root')).render(
       <Route path="/account" element={<Account />} />
       <Route path="/transfer/:cardId" element={<Transfer />} />
       <Route path="/transaction-history" element={<TransactionHistory />} />
+      <Route path="/financial-reports" element={<FinancialReports />} />
       </Route>
 
       {/* Default redirect */}

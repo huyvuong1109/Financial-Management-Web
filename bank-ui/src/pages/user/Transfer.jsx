@@ -13,6 +13,10 @@ import {
   CircularProgress,
   Alert,
   Divider,
+  Select,
+  MenuItem,
+  FormControl,
+  InputLabel,
 } from "@mui/material";
 import ArrowBackIcon from "@mui/icons-material/ArrowBack";
 import SearchIcon from "@mui/icons-material/Search";
@@ -32,7 +36,19 @@ export default function Transfer() {
   const [showOtpInput, setShowOtpInput] = useState(false);
   const [otp, setOtp] = useState('');
   const [transactionId, setTransactionId] = useState(null);
+  const [selectedCategory, setSelectedCategory] = useState('');
   const token = localStorage.getItem("token");
+
+  // Default categories with emoji - categoryId = index + 1 (1-7)
+  const defaultCategories = [
+    { name: "Cá nhân", emoji: "👤", type: "EXPENSE" },
+    { name: "Mua sắm – Dịch vụ", emoji: "🛒", type: "EXPENSE" },
+    { name: "Công việc", emoji: "💼", type: "EXPENSE" },
+    { name: "Giáo dục", emoji: "🎓", type: "EXPENSE" },
+    { name: "Y tế", emoji: "🏥", type: "EXPENSE" },
+    { name: "Sinh hoạt", emoji: "🏠", type: "EXPENSE" },
+    { name: "Khác", emoji: "📦", type: "EXPENSE" },
+  ];
 
   useEffect(() => {
     fetch(`${BANK_SERVICE_API}/api/cards/${cardId}`, {
@@ -57,6 +73,7 @@ export default function Transfer() {
         setLoading(false);
       });
   }, [cardId, token]);
+
 
   if (loading) {
     return <p>Đang tải dữ liệu...</p>;
@@ -102,8 +119,8 @@ export default function Transfer() {
   };
 
   const handleConfirmTransfer = () => {
-    if (!receiverInfo || !amount) {
-      alert("Vui lòng nhập đủ thông tin người nhận và số tiền.");
+    if (!receiverInfo || !amount || !selectedCategory) {
+      alert("Vui lòng nhập đủ thông tin người nhận, số tiền và phân loại.");
       return;
     }
 
@@ -111,6 +128,7 @@ export default function Transfer() {
       fromAccountId: cardInfo.accountId,
       toAccountId: receiverInfo.accountId,
       amount: parseFloat(amount),
+      categoryId: selectedCategory, // categoryId là index + 1 (1-7)
     };
 
     fetch(`${BANK_SERVICE_API}/transactions/create`, {
@@ -173,6 +191,7 @@ const handleVerifyOtp = () => {
           setReceiverCardNumber('');
           setReceiverInfo(null);
           setAmount('');
+          setSelectedCategory('');
           setShowOtpInput(false);
           setOtp('');
           setTransactionId(null);
@@ -182,6 +201,7 @@ const handleVerifyOtp = () => {
           setReceiverCardNumber('');
           setReceiverInfo(null);
           setAmount('');
+          setSelectedCategory('');
           setShowOtpInput(false);
           setOtp('');
           setTransactionId(null);
@@ -206,10 +226,10 @@ const handleVerifyOtp = () => {
         <Box sx={{ display: "flex", alignItems: "center", mb: 4 }}>
           <Button
             startIcon={<ArrowBackIcon />}
-            onClick={() => navigate(-1)}
+          onClick={() => navigate(-1)}
             sx={{ mr: 2 }}
-          >
-            Trở lại
+        >
+          Trở lại
           </Button>
           <Typography variant="h4" sx={{ fontWeight: "bold", color: "#1976d2" }}>
             Chuyển khoản
@@ -279,9 +299,9 @@ const handleVerifyOtp = () => {
                   <TextField
                     fullWidth
                     label="Số thẻ người nhận"
-                    placeholder="Nhập số thẻ"
-                    value={receiverCardNumber}
-                    onChange={(e) => setReceiverCardNumber(e.target.value)}
+          placeholder="Nhập số thẻ"
+          value={receiverCardNumber}
+          onChange={(e) => setReceiverCardNumber(e.target.value)}
                     sx={{ mb: 2 }}
                   />
                   <Button
@@ -309,8 +329,13 @@ const handleVerifyOtp = () => {
                   </Paper>
                 )}
 
-                {receiverInfo && (
+        {receiverInfo && (
                   <Box sx={{ mb: 3 }}>
+                    <Typography variant="h6" gutterBottom sx={{ fontWeight: "bold", mb: 2, color: "#1976d2" }}>
+                      Thông tin chuyển khoản
+                    </Typography>
+                    <Divider sx={{ mb: 3 }} />
+                    
                     <TextField
                       fullWidth
                       label="Số tiền (VNĐ)"
@@ -320,6 +345,25 @@ const handleVerifyOtp = () => {
                       onChange={(e) => setAmount(e.target.value)}
                       sx={{ mb: 2 }}
                     />
+                    
+                    <FormControl fullWidth sx={{ mb: 2 }}>
+                      <InputLabel>Phân loại</InputLabel>
+                      <Select
+                        value={selectedCategory}
+                        label="Phân loại"
+                        onChange={(e) => setSelectedCategory(e.target.value)}
+                      >
+                        {defaultCategories.map((category, index) => {
+                          const categoryId = index + 1; // categoryId = 1, 2, 3, 4, 5, 6, 7
+                          return (
+                            <MenuItem key={categoryId} value={String(categoryId)}>
+                              {category.emoji} {category.name}
+                            </MenuItem>
+                          );
+                        })}
+                      </Select>
+                    </FormControl>
+                    
                     <Button
                       fullWidth
                       variant="contained"
@@ -335,9 +379,9 @@ const handleVerifyOtp = () => {
                       Xác nhận chuyển khoản
                     </Button>
                   </Box>
-                )}
+        )}
 
-                {showOtpInput && (
+        {showOtpInput && (
                   <Paper sx={{ p: 3, backgroundColor: "#fff3e0", borderRadius: 2 }}>
                     <Box sx={{ display: "flex", alignItems: "center", mb: 2 }}>
                       <VerifiedUserIcon sx={{ mr: 1, color: "#ff9800" }} />
@@ -351,11 +395,11 @@ const handleVerifyOtp = () => {
                     <TextField
                       fullWidth
                       label="Mã OTP"
-                      placeholder="Nhập mã OTP"
-                      value={otp}
-                      onChange={(e) => setOtp(e.target.value)}
+              placeholder="Nhập mã OTP"
+              value={otp}
+              onChange={(e) => setOtp(e.target.value)}
                       sx={{ mb: 2 }}
-                    />
+            />
                     <Button
                       fullWidth
                       variant="contained"
@@ -371,7 +415,7 @@ const handleVerifyOtp = () => {
                       Xác nhận OTP
                     </Button>
                   </Paper>
-                )}
+        )}
               </CardContent>
             </Card>
           </Grid>

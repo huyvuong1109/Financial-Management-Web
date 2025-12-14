@@ -50,13 +50,19 @@ public class ReportService {
         LocalDateTime startDate = yearMonth.atDay(1).atStartOfDay();
         LocalDateTime endDate = yearMonth.atEndOfMonth().atTime(23, 59, 59);
 
-        // Tính tổng thu (tiền vào)
+        // Tính tổng thu (tiền vào) - xử lý null
         BigDecimal totalIncome = transactionHistoryRepository.sumIncomingAmount(
                 accountId, TransactionStatus.APPROVED, startDate, endDate);
+        if (totalIncome == null) {
+            totalIncome = BigDecimal.ZERO;
+        }
 
-        // Tính tổng chi (tiền ra)
+        // Tính tổng chi (tiền ra) - xử lý null
         BigDecimal totalExpense = transactionHistoryRepository.sumOutgoingAmount(
                 accountId, TransactionStatus.APPROVED, startDate, endDate);
+        if (totalExpense == null) {
+            totalExpense = BigDecimal.ZERO;
+        }
 
         // Tính thu nhập ròng
         BigDecimal netAmount = totalIncome.subtract(totalExpense);
@@ -105,6 +111,10 @@ public class ReportService {
 
         // Tính tổng cho từng category
         for (Category category : categories) {
+            if (category == null || category.getCategoryId() == null) {
+                continue;
+            }
+            
             BigDecimal amount;
             if (category.getCategoryType() == CategoryType.EXPENSE) {
                 amount = transactionHistoryRepository.sumExpenseByCategoryId(
@@ -116,12 +126,12 @@ public class ReportService {
                         TransactionStatus.APPROVED, startDate, endDate);
             }
 
-            if (amount.compareTo(BigDecimal.ZERO) > 0) {
+            if (amount != null && amount.compareTo(BigDecimal.ZERO) > 0) {
                 totalAmount = totalAmount.add(amount);
                 result.add(CategoryExpenseDTO.builder()
                         .categoryId(category.getCategoryId())
-                        .categoryName(category.getCategoryName())
-                        .categoryType(category.getCategoryType().name())
+                        .categoryName(category.getCategoryName() != null ? category.getCategoryName() : "Khác")
+                        .categoryType(category.getCategoryType() != null ? category.getCategoryType().name() : "EXPENSE")
                         .totalAmount(amount)
                         .build());
             }
@@ -163,17 +173,34 @@ public class ReportService {
             endDate = LocalDateTime.of(year, 12, 31, 23, 59, 59);
         }
 
-        // Lấy số dư hiện tại
+        // Lấy số dư hiện tại - xử lý null
         Balance balance = balanceRepository.findByAccountId(accountId)
-                .orElseThrow(() -> new AppException("Account balance not found"));
+                .orElse(Balance.builder()
+                        .accountId(accountId)
+                        .availableBalance(BigDecimal.ZERO)
+                        .holdBalance(BigDecimal.ZERO)
+                        .build());
 
-        BigDecimal currentBalance = balance.getAvailableBalance().add(balance.getHoldBalance());
+        BigDecimal availableBalance = balance.getAvailableBalance() != null 
+                ? balance.getAvailableBalance() 
+                : BigDecimal.ZERO;
+        BigDecimal holdBalance = balance.getHoldBalance() != null 
+                ? balance.getHoldBalance() 
+                : BigDecimal.ZERO;
+        BigDecimal currentBalance = availableBalance.add(holdBalance);
 
-        // Tính tổng tiền vào và tiền ra
+        // Tính tổng tiền vào và tiền ra - xử lý null
         BigDecimal totalInflow = transactionHistoryRepository.sumIncomingAmount(
                 accountId, TransactionStatus.APPROVED, startDate, endDate);
+        if (totalInflow == null) {
+            totalInflow = BigDecimal.ZERO;
+        }
+        
         BigDecimal totalOutflow = transactionHistoryRepository.sumOutgoingAmount(
                 accountId, TransactionStatus.APPROVED, startDate, endDate);
+        if (totalOutflow == null) {
+            totalOutflow = BigDecimal.ZERO;
+        }
 
         // Tính dòng tiền ròng
         BigDecimal netCashFlow = totalInflow.subtract(totalOutflow);
@@ -206,6 +233,10 @@ public class ReportService {
         List<CashFlowItemDTO> items = new ArrayList<>();
 
         for (Category category : categories) {
+            if (category == null || category.getCategoryId() == null) {
+                continue;
+            }
+            
             BigDecimal amount;
             List<TransactionHistory> transactions;
 
@@ -214,39 +245,59 @@ public class ReportService {
                 amount = transactionHistoryRepository.sumIncomeByCategoryId(
                         accountId, category.getCategoryId().toString(),
                         TransactionStatus.APPROVED, startDate, endDate);
+                if (amount == null) {
+                    amount = BigDecimal.ZERO;
+                }
+                
                 transactions = transactionHistoryRepository.findByCategoryAndDateRange(
                         accountId, category.getCategoryId().toString(),
-                        TransactionStatus.APPROVED, startDate, endDate)
-                        .stream()
-                        .filter(t -> t.getToAccountId().equals(accountId))
-                        .collect(Collectors.toList());
+                        TransactionStatus.APPROVED, startDate, endDate);
+                if (transactions == null) {
+                    transactions = new ArrayList<>();
+                } else {
+                    transactions = transactions.stream()
+                            .filter(t -> t != null && t.getToAccountId() != null && t.getToAccountId().equals(accountId))
+                            .collect(Collectors.toList());
+                }
             } else {
                 // Tiền ra: WITHDRAWAL hoặc TRANSFER (khi là người gửi)
                 amount = transactionHistoryRepository.sumExpenseByCategoryId(
                         accountId, category.getCategoryId().toString(),
                         TransactionStatus.APPROVED, startDate, endDate);
+                if (amount == null) {
+                    amount = BigDecimal.ZERO;
+                }
+                
                 transactions = transactionHistoryRepository.findByCategoryAndDateRange(
                         accountId, category.getCategoryId().toString(),
-                        TransactionStatus.APPROVED, startDate, endDate)
-                        .stream()
-                        .filter(t -> t.getFromAccountId().equals(accountId))
-                        .collect(Collectors.toList());
+                        TransactionStatus.APPROVED, startDate, endDate);
+                if (transactions == null) {
+                    transactions = new ArrayList<>();
+                } else {
+                    transactions = transactions.stream()
+                            .filter(t -> t != null && t.getFromAccountId() != null && t.getFromAccountId().equals(accountId))
+                            .collect(Collectors.toList());
+                }
             }
 
-            if (amount.compareTo(BigDecimal.ZERO) > 0) {
+            if (amount != null && amount.compareTo(BigDecimal.ZERO) > 0) {
                 // Xác định loại giao dịch chủ yếu
-                String mainTransactionType = transactions.stream()
-                        .collect(Collectors.groupingBy(TransactionHistory::getTransactionType, Collectors.counting()))
-                        .entrySet().stream()
-                        .max(Map.Entry.comparingByValue())
-                        .map(e -> e.getKey().name())
-                        .orElse("TRANSFER");
+                String mainTransactionType = "TRANSFER";
+                if (transactions != null && !transactions.isEmpty()) {
+                    mainTransactionType = transactions.stream()
+                            .filter(t -> t.getTransactionType() != null)
+                            .collect(Collectors.groupingBy(TransactionHistory::getTransactionType, Collectors.counting()))
+                            .entrySet().stream()
+                            .max(Map.Entry.comparingByValue())
+                            .map(e -> e.getKey().name())
+                            .orElse("TRANSFER");
+                }
 
                 items.add(CashFlowItemDTO.builder()
-                        .categoryName(category.getCategoryName())
+                        .categoryName(category.getCategoryName() != null ? category.getCategoryName() : "Khác")
                         .transactionType(mainTransactionType)
                         .amount(amount)
-                        .transactionCount(transactions.size())
+                        .transactionCount(transactions != null ? transactions.size() : 0)
                         .build());
             }
         }
@@ -265,17 +316,28 @@ public class ReportService {
         Account account = accountRepository.findById(accountId)
                 .orElseThrow(() -> new AppException("Account not found"));
 
+        // Xử lý null cho Balance
         Balance balance = balanceRepository.findByAccountId(accountId)
-                .orElseThrow(() -> new AppException("Balance not found"));
+                .orElse(Balance.builder()
+                        .accountId(accountId)
+                        .availableBalance(BigDecimal.ZERO)
+                        .holdBalance(BigDecimal.ZERO)
+                        .build());
 
-        BigDecimal totalBalance = balance.getAvailableBalance().add(balance.getHoldBalance());
+        BigDecimal availableBalance = balance.getAvailableBalance() != null 
+                ? balance.getAvailableBalance() 
+                : BigDecimal.ZERO;
+        BigDecimal holdBalance = balance.getHoldBalance() != null 
+                ? balance.getHoldBalance() 
+                : BigDecimal.ZERO;
+        BigDecimal totalBalance = availableBalance.add(holdBalance);
 
         return WalletBalanceDTO.builder()
                 .accountId(accountId)
-                .customerName(account.getCustomerName())
-                .email(account.getEmail())
-                .availableBalance(balance.getAvailableBalance())
-                .holdBalance(balance.getHoldBalance())
+                .customerName(account.getCustomerName() != null ? account.getCustomerName() : "")
+                .email(account.getEmail() != null ? account.getEmail() : "")
+                .availableBalance(availableBalance)
+                .holdBalance(holdBalance)
                 .totalBalance(totalBalance)
                 .build();
     }
@@ -288,15 +350,26 @@ public class ReportService {
         List<WalletBalanceDTO> result = new ArrayList<>();
 
         for (Balance balance : balances) {
+            if (balance == null || balance.getAccountId() == null) {
+                continue;
+            }
+            
             Account account = accountRepository.findById(balance.getAccountId()).orElse(null);
             if (account != null) {
-                BigDecimal totalBalance = balance.getAvailableBalance().add(balance.getHoldBalance());
+                BigDecimal availableBalance = balance.getAvailableBalance() != null 
+                        ? balance.getAvailableBalance() 
+                        : BigDecimal.ZERO;
+                BigDecimal holdBalance = balance.getHoldBalance() != null 
+                        ? balance.getHoldBalance() 
+                        : BigDecimal.ZERO;
+                BigDecimal totalBalance = availableBalance.add(holdBalance);
+                
                 result.add(WalletBalanceDTO.builder()
                         .accountId(balance.getAccountId())
-                        .customerName(account.getCustomerName())
-                        .email(account.getEmail())
-                        .availableBalance(balance.getAvailableBalance())
-                        .holdBalance(balance.getHoldBalance())
+                        .customerName(account.getCustomerName() != null ? account.getCustomerName() : "")
+                        .email(account.getEmail() != null ? account.getEmail() : "")
+                        .availableBalance(availableBalance)
+                        .holdBalance(holdBalance)
                         .totalBalance(totalBalance)
                         .build());
             }
@@ -315,16 +388,35 @@ public class ReportService {
         LocalDateTime startDate = LocalDateTime.of(year, 1, 1, 0, 0, 0);
         LocalDateTime endDate = LocalDateTime.of(year, 12, 31, 23, 59, 59);
 
-        // Lấy số dư hiện tại
+        // Lấy số dư hiện tại - xử lý null
         Balance balance = balanceRepository.findByAccountId(accountId)
-                .orElseThrow(() -> new AppException("Balance not found"));
-        BigDecimal totalBalance = balance.getAvailableBalance().add(balance.getHoldBalance());
+                .orElse(Balance.builder()
+                        .accountId(accountId)
+                        .availableBalance(BigDecimal.ZERO)
+                        .holdBalance(BigDecimal.ZERO)
+                        .build());
 
-        // Tính tổng thu nhập và chi tiêu trong năm
+        BigDecimal availableBalance = balance.getAvailableBalance() != null 
+                ? balance.getAvailableBalance() 
+                : BigDecimal.ZERO;
+        BigDecimal holdBalance = balance.getHoldBalance() != null 
+                ? balance.getHoldBalance() 
+                : BigDecimal.ZERO;
+        BigDecimal totalBalance = availableBalance.add(holdBalance);
+
+        // Tính tổng thu nhập và chi tiêu trong năm - xử lý null
         BigDecimal totalIncome = transactionHistoryRepository.sumIncomingAmount(
                 accountId, TransactionStatus.APPROVED, startDate, endDate);
+        if (totalIncome == null) {
+            totalIncome = BigDecimal.ZERO;
+        }
+        
         BigDecimal totalExpense = transactionHistoryRepository.sumOutgoingAmount(
                 accountId, TransactionStatus.APPROVED, startDate, endDate);
+        if (totalExpense == null) {
+            totalExpense = BigDecimal.ZERO;
+        }
+        
         BigDecimal netAmount = totalIncome.subtract(totalExpense);
 
         // Đếm số giao dịch

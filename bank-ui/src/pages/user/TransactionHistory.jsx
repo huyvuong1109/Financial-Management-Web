@@ -165,7 +165,7 @@ export default function TransactionHistory() {
                                 <TableRow>
                                     <TableCell colSpan={7} align="center" sx={{ py: 4 }}>
                                         <Typography variant="h6" color="text.secondary">
-                                            Không có giao dịch nào
+                                        Không có giao dịch nào
                                         </Typography>
                                     </TableCell>
                                 </TableRow>
@@ -186,7 +186,7 @@ export default function TransactionHistory() {
                     <Paper sx={{ px: 3, py: 1, borderRadius: 2 }}>
                         <Typography variant="body1" sx={{ fontWeight: 'bold' }}>
                             Trang {page + 1} / {totalPages}
-                        </Typography>
+                    </Typography>
                     </Paper>
                     <Button 
                         variant="contained" 
