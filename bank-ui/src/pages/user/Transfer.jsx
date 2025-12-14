@@ -36,10 +36,11 @@ export default function Transfer() {
   const [showOtpInput, setShowOtpInput] = useState(false);
   const [otp, setOtp] = useState('');
   const [transactionId, setTransactionId] = useState(null);
+  const [categories, setCategories] = useState([]);
   const [selectedCategory, setSelectedCategory] = useState('');
   const token = localStorage.getItem("token");
 
-  // Default categories with emoji - categoryId = index + 1 (1-7)
+  // Default categories with emoji
   const defaultCategories = [
     { name: "Cá nhân", emoji: "👤", type: "EXPENSE" },
     { name: "Mua sắm – Dịch vụ", emoji: "🛒", type: "EXPENSE" },
@@ -74,6 +75,77 @@ export default function Transfer() {
       });
   }, [cardId, token]);
 
+  // Fetch categories and create default ones if needed
+  useEffect(() => {
+    if (token) {
+      fetch(`${BANK_SERVICE_API}/api/category/my`, {
+        method: "GET",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+      })
+        .then((response) => {
+          if (!response.ok) {
+            throw new Error("Lỗi khi lấy danh sách phân loại");
+          }
+          return response.json();
+        })
+        .then((data) => {
+          const existingCategories = data || [];
+          
+          // Check if default categories exist, if not create them
+          const categoryNames = existingCategories.map(cat => cat.categoryName);
+          const missingCategories = defaultCategories.filter(
+            defaultCat => !categoryNames.includes(defaultCat.name)
+          );
+
+          // Create missing categories
+          if (missingCategories.length > 0) {
+            const createPromises = missingCategories.map(category => 
+              fetch(`${BANK_SERVICE_API}/api/category`, {
+                method: "POST",
+                headers: {
+                  "Content-Type": "application/json",
+                  Authorization: `Bearer ${token}`,
+                },
+                body: JSON.stringify({
+                  categoryName: category.name,
+                  categoryType: category.type,
+                }),
+              })
+            );
+
+            Promise.all(createPromises)
+              .then(() => {
+                // Fetch categories again after creating
+                return fetch(`${BANK_SERVICE_API}/api/category/my`, {
+                  method: "GET",
+                  headers: {
+                    "Content-Type": "application/json",
+                    Authorization: `Bearer ${token}`,
+                  },
+                });
+              })
+              .then(response => response.json())
+              .then(updatedCategories => {
+                setCategories(updatedCategories || []);
+              })
+              .catch(error => {
+                console.error("Error creating categories:", error);
+                setCategories(existingCategories);
+              });
+          } else {
+            setCategories(existingCategories);
+          }
+        })
+        .catch((error) => {
+          console.error("Error fetching categories:", error);
+          // If fetch fails, use default categories structure (but they won't have IDs)
+          setCategories([]);
+        });
+    }
+  }, [token]);
 
   if (loading) {
     return <p>Đang tải dữ liệu...</p>;
@@ -128,7 +200,7 @@ export default function Transfer() {
       fromAccountId: cardInfo.accountId,
       toAccountId: receiverInfo.accountId,
       amount: parseFloat(amount),
-      categoryId: selectedCategory, // categoryId là index + 1 (1-7)
+      categoryId: selectedCategory,
     };
 
     fetch(`${BANK_SERVICE_API}/transactions/create`, {
@@ -353,14 +425,21 @@ const handleVerifyOtp = () => {
                         label="Phân loại"
                         onChange={(e) => setSelectedCategory(e.target.value)}
                       >
-                        {defaultCategories.map((category, index) => {
-                          const categoryId = index + 1; // categoryId = 1, 2, 3, 4, 5, 6, 7
-                          return (
-                            <MenuItem key={categoryId} value={String(categoryId)}>
-                              {category.emoji} {category.name}
-                            </MenuItem>
-                          );
-                        })}
+                        {categories
+                          .filter(cat => defaultCategories.some(dc => dc.name === cat.categoryName))
+                          .sort((a, b) => {
+                            const indexA = defaultCategories.findIndex(dc => dc.name === a.categoryName);
+                            const indexB = defaultCategories.findIndex(dc => dc.name === b.categoryName);
+                            return indexA - indexB;
+                          })
+                          .map((category) => {
+                            const defaultCat = defaultCategories.find(dc => dc.name === category.categoryName);
+                            return (
+                              <MenuItem key={category.categoryId} value={String(category.categoryId)}>
+                                {defaultCat ? `${defaultCat.emoji} ${category.categoryName}` : category.categoryName}
+                              </MenuItem>
+                            );
+                          })}
                       </Select>
                     </FormControl>
                     
