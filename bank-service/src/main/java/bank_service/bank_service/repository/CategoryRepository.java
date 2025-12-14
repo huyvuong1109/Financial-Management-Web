@@ -10,4 +10,5 @@ import java.util.List;
 
 public interface CategoryRepository extends JpaRepository<Category, Long> {
     List<Category> findByAccountId(String id);
+    Category findByAccountIdAndCategoryName(String accountId, String categoryName);
 }

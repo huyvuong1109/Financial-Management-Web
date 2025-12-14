@@ -6,7 +6,7 @@ import Login from './pages/Login';
 import Register from './pages/Register';
 import AdminHome from './pages/admin/AdminHome';
 import User from './pages/admin/User';
-import Card from './pages/admin/Card';
+import CardManagement from './pages/admin/Card';
 import CardDetails from './pages/admin/CardDetails';
 import UserHome from './pages/user/UserHome';
 import Forbidden from './pages/Forbidden';
@@ -17,6 +17,7 @@ import PublicRoute from './components/PublicRoute';
 import Transactions from './pages/admin/Transactions';
 import TransactionHistory from "./pages/user/TransactionHistory";
 import FinancialReports from "./pages/user/FinancialReports";
+import AdminFinancialReports from './pages/admin/AdminFinancialReports';
 
 ReactDOM.createRoot(document.getElementById('root')).render(
 
@@ -31,9 +32,10 @@ ReactDOM.createRoot(document.getElementById('root')).render(
         <Route path="/admin-home" element={<AdminHome />} />
         <Route path="/DashBoard" element={<AdminHome />} />
         <Route path="/User" element={<User />} />
-        <Route path="/Card" element={<Card />} />
+        <Route path="/Card" element={<CardManagement />} />
         <Route path="/Card/:cardId" element={<CardDetails />} />
         <Route path="Transactions" element={<Transactions />} />
+        <Route path="/AdminFinancialReports" element={<AdminFinancialReports />} />
       </Route>
 
       {/* User routes */}

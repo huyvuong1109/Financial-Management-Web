@@ -22,6 +22,7 @@ import ArrowBackIcon from "@mui/icons-material/ArrowBack";
 import SearchIcon from "@mui/icons-material/Search";
 import SendIcon from "@mui/icons-material/Send";
 import VerifiedUserIcon from "@mui/icons-material/VerifiedUser";
+import CreditCardIcon from "@mui/icons-material/CreditCard";
 import UserAppBar from "./UserAppBar";
 import { BANK_SERVICE_API } from '../../config/api';
 
@@ -29,6 +30,7 @@ export default function Transfer() {
   const { cardId } = useParams();
   const navigate = useNavigate();
   const [cardInfo, setCardInfo] = useState(null);
+  const [balances, setBalances] = useState(null);
   const [loading, setLoading] = useState(true);
   const [receiverCardNumber, setReceiverCardNumber] = useState('');
   const [receiverInfo, setReceiverInfo] = useState(null);
@@ -38,6 +40,7 @@ export default function Transfer() {
   const [transactionId, setTransactionId] = useState(null);
   const [categories, setCategories] = useState([]);
   const [selectedCategory, setSelectedCategory] = useState('');
+  const [isCreatingTransaction, setIsCreatingTransaction] = useState(false);
   const token = localStorage.getItem("token");
 
   // Default categories with emoji
@@ -51,6 +54,109 @@ export default function Transfer() {
     { name: "Khác", emoji: "📦", type: "EXPENSE" },
   ];
 
+  // Component hiển thị card preview
+  const CardPreview = ({ cardType, cardNumber, expiryDate, customerName }) => {
+    const getCardGradient = (type) => {
+      switch (type) {
+        case "VISA":
+          return "linear-gradient(135deg, #1e3c72 0%, #2a5298 50%, #1e3c72 100%)";
+        case "DEBIT":
+          return "linear-gradient(135deg, #667eea 0%, #764ba2 100%)";
+        case "CREDIT":
+          return "linear-gradient(135deg, #f093fb 0%, #f5576c 100%)";
+        default:
+          return "linear-gradient(135deg, #667eea 0%, #764ba2 100%)";
+      }
+    };
+
+    const getCardLogo = (type) => {
+      switch (type) {
+        case "VISA":
+          return "VISA";
+        case "DEBIT":
+          return "DEBIT";
+        case "CREDIT":
+          return "CREDIT";
+        default:
+          return "CARD";
+      }
+    };
+
+    return (
+      <Box
+        sx={{
+          width: "100%",
+          maxWidth: 400,
+          height: 240,
+          borderRadius: 4,
+          background: getCardGradient(cardType),
+          position: "relative",
+          overflow: "hidden",
+          boxShadow: "0 10px 40px rgba(0,0,0,0.3)",
+          color: "white",
+          p: 3,
+          display: "flex",
+          flexDirection: "column",
+          justifyContent: "space-between",
+          "&::before": {
+            content: '""',
+            position: "absolute",
+            top: -50,
+            right: -50,
+            width: 200,
+            height: 200,
+            borderRadius: "50%",
+            background: "rgba(255,255,255,0.1)",
+          },
+          "&::after": {
+            content: '""',
+            position: "absolute",
+            bottom: -30,
+            left: -30,
+            width: 150,
+            height: 150,
+            borderRadius: "50%",
+            background: "rgba(255,255,255,0.1)",
+          },
+        }}
+      >
+        <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "start", zIndex: 1 }}>
+          <CreditCardIcon sx={{ fontSize: 40, opacity: 0.8 }} />
+          <Typography variant="h6" sx={{ fontWeight: "bold", letterSpacing: 2 }}>
+            {getCardLogo(cardType)}
+          </Typography>
+        </Box>
+        <Box sx={{ zIndex: 1 }}>
+          <Typography variant="body2" sx={{ mb: 1, opacity: 0.9, fontSize: "0.85rem" }}>
+            Số thẻ
+          </Typography>
+          <Typography variant="h6" sx={{ fontFamily: "monospace", letterSpacing: 2, mb: 3 }}>
+            {cardNumber || "**** **** **** ****"}
+          </Typography>
+          <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "end" }}>
+            <Box>
+              <Typography variant="body2" sx={{ opacity: 0.9, fontSize: "0.75rem", mb: 0.5 }}>
+                Hết hạn
+              </Typography>
+              <Typography variant="body1" sx={{ fontFamily: "monospace" }}>
+                {expiryDate || "MM/YY"}
+              </Typography>
+            </Box>
+            <Box sx={{ textAlign: "right" }}>
+              <Typography variant="body2" sx={{ opacity: 0.9, fontSize: "0.75rem", mb: 0.5 }}>
+                Chủ thẻ
+              </Typography>
+              <Typography variant="body1" sx={{ textTransform: "uppercase", fontSize: "0.9rem" }}>
+                {customerName?.split(" ").map(n => n[0]).join("") || "USER"}
+              </Typography>
+            </Box>
+          </Box>
+        </Box>
+      </Box>
+    );
+  };
+
+  // Fetch card info
   useEffect(() => {
     fetch(`${BANK_SERVICE_API}/api/cards/${cardId}`, {
       method: "GET",
@@ -74,6 +180,23 @@ export default function Transfer() {
         setLoading(false);
       });
   }, [cardId, token]);
+
+  // Fetch balances - đồng bộ với Account page
+  const fetchBalances = () => {
+    fetch(`${BANK_SERVICE_API}/api/balances`, {
+      method: "GET",
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    })
+      .then((res) => res.json())
+      .then((data) => setBalances(data))
+      .catch((err) => console.error(err));
+  };
+
+  useEffect(() => {
+    fetchBalances();
+  }, [token]);
 
   // Fetch categories and create default ones if needed
   useEffect(() => {
@@ -196,6 +319,8 @@ export default function Transfer() {
       return;
     }
 
+    setIsCreatingTransaction(true);
+
     const transactionData = {
       fromAccountId: cardInfo.accountId,
       toAccountId: receiverInfo.accountId,
@@ -225,6 +350,9 @@ export default function Transfer() {
       .catch((error) => {
         console.error(error);
         alert(error.message);
+      })
+      .finally(() => {
+        setIsCreatingTransaction(false);
       });
   };
 
@@ -259,6 +387,8 @@ const handleVerifyOtp = () => {
       // Kiểm tra status từ dữ liệu trả về
       if (data.status === "AWAITING_APPROVAL") {
           alert("Chuyển khoản thành công!");
+          // Cập nhật số dư ngay lập tức
+          fetchBalances();
           // Reset form sau khi thành công
           setReceiverCardNumber('');
           setReceiverInfo(null);
@@ -292,18 +422,113 @@ const handleVerifyOtp = () => {
 };
 
   return (
-    <Box sx={{ minHeight: "100vh", backgroundColor: "#f5f7fa" }}>
+    <Box
+      sx={{
+        minHeight: "100vh",
+        position: "relative",
+        "&::before": {
+          content: '""',
+          position: "fixed",
+          top: 0,
+          left: 0,
+          right: 0,
+          bottom: 0,
+          backgroundImage: "url('https://images.unsplash.com/photo-1554224155-6726b3ff858f?ixlib=rb-4.0.3&auto=format&fit=crop&w=2000&q=80')",
+          backgroundSize: "cover",
+          backgroundPosition: "center",
+          backgroundRepeat: "no-repeat",
+          filter: "blur(8px)",
+          opacity: 0.3,
+          zIndex: 0,
+        },
+      }}
+    >
+      {/* Loading Overlay */}
+      {isCreatingTransaction && (
+        <Box
+          sx={{
+            position: "fixed",
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            backgroundColor: "rgba(0, 0, 0, 0.5)",
+            backdropFilter: "blur(4px)",
+            zIndex: 9999,
+            display: "flex",
+            justifyContent: "center",
+            alignItems: "center",
+            flexDirection: "column",
+          }}
+        >
+          <CircularProgress
+            size={60}
+            sx={{
+              color: "#667eea",
+              mb: 2,
+            }}
+          />
+          <Typography
+            variant="h6"
+            sx={{
+              color: "white",
+              fontWeight: "bold",
+              textShadow: "0 2px 4px rgba(0,0,0,0.3)",
+            }}
+          >
+            Đang xử lý chuyển khoản...
+          </Typography>
+          <Typography
+            variant="body2"
+            sx={{
+              color: "rgba(255, 255, 255, 0.8)",
+              mt: 1,
+              textShadow: "0 1px 2px rgba(0,0,0,0.3)",
+            }}
+          >
+            Vui lòng đợi trong giây lát
+          </Typography>
+        </Box>
+      )}
+
       <UserAppBar />
-      <Container maxWidth="lg" sx={{ mt: 4, mb: 4 }}>
+      <Container
+        maxWidth="lg"
+        sx={{
+          mt: 4,
+          mb: 4,
+          position: "relative",
+          zIndex: 1,
+          filter: isCreatingTransaction ? "blur(4px)" : "none",
+          pointerEvents: isCreatingTransaction ? "none" : "auto",
+          transition: "filter 0.3s ease",
+        }}
+      >
         <Box sx={{ display: "flex", alignItems: "center", mb: 4 }}>
           <Button
             startIcon={<ArrowBackIcon />}
-          onClick={() => navigate(-1)}
-            sx={{ mr: 2 }}
-        >
-          Trở lại
+            onClick={() => navigate(-1)}
+            sx={{
+              mr: 2,
+              borderRadius: 2,
+              background: "linear-gradient(135deg, #667eea 0%, #764ba2 100%)",
+              "&:hover": {
+                background: "linear-gradient(135deg, #5568d3 0%, #653d8f 100%)",
+              },
+              color: "white",
+            }}
+          >
+            Trở lại
           </Button>
-          <Typography variant="h4" sx={{ fontWeight: "bold", color: "#1976d2" }}>
+          <Typography
+            variant="h4"
+            sx={{
+              fontWeight: "bold",
+              background: "linear-gradient(135deg, #667eea 0%, #764ba2 100%)",
+              WebkitBackgroundClip: "text",
+              WebkitTextFillColor: "transparent",
+            }}
+          >
             Chuyển khoản
           </Typography>
         </Box>
@@ -311,58 +536,111 @@ const handleVerifyOtp = () => {
         <Grid container spacing={4}>
           {/* Thông tin thẻ của bạn */}
           <Grid item xs={12} md={5}>
-            <Card sx={{ boxShadow: 4, height: "100%" }}>
+            <Card
+              sx={{
+                boxShadow: "0 8px 32px rgba(0,0,0,0.1)",
+                borderRadius: 3,
+                height: "100%",
+                background: "rgba(255, 255, 255, 0.95)",
+                backdropFilter: "blur(10px)",
+                border: "1px solid rgba(255, 255, 255, 0.18)",
+              }}
+            >
               <CardContent>
-                <Typography variant="h5" gutterBottom sx={{ fontWeight: "bold", mb: 3, color: "#1976d2" }}>
+                <Typography
+                  variant="h5"
+                  gutterBottom
+                  sx={{
+                    fontWeight: "bold",
+                    mb: 3,
+                    background: "linear-gradient(135deg, #667eea 0%, #764ba2 100%)",
+                    WebkitBackgroundClip: "text",
+                    WebkitTextFillColor: "transparent",
+                  }}
+                >
                   Thông tin thẻ của bạn
                 </Typography>
                 <Divider sx={{ mb: 3 }} />
-                <Grid container spacing={2}>
-                  <Grid item xs={12}>
-                    <Typography variant="body2" color="text.secondary">Số thẻ</Typography>
-                    <Typography variant="h6">{cardInfo.cardId}</Typography>
-                  </Grid>
-                  <Grid item xs={12}>
-                    <Typography variant="body2" color="text.secondary">Chủ thẻ</Typography>
-                    <Typography variant="h6">{cardInfo.customerName}</Typography>
-                  </Grid>
-                  <Grid item xs={12} sm={6}>
-                    <Typography variant="body2" color="text.secondary">Email</Typography>
-                    <Typography variant="body1">{cardInfo.email}</Typography>
-                  </Grid>
-                  <Grid item xs={12} sm={6}>
-                    <Typography variant="body2" color="text.secondary">Số điện thoại</Typography>
-                    <Typography variant="body1">{cardInfo.phoneNumber}</Typography>
-                  </Grid>
-                  <Grid item xs={12} sm={6}>
-                    <Typography variant="body2" color="text.secondary">Loại thẻ</Typography>
-                    <Typography variant="body1">{cardInfo.cardType}</Typography>
-                  </Grid>
-                  <Grid item xs={12} sm={6}>
-                    <Typography variant="body2" color="text.secondary">Ngày hết hạn</Typography>
-                    <Typography variant="body1">{cardInfo.expiryDate}</Typography>
-                  </Grid>
-                  <Grid item xs={12}>
-                    <Paper sx={{ p: 2, backgroundColor: "#e3f2fd", borderRadius: 2 }}>
-                      <Typography variant="body2" color="text.secondary">Số dư khả dụng</Typography>
-                      <Typography variant="h5" sx={{ fontWeight: "bold", color: "#1976d2" }}>
-                        {(cardInfo.availableBalance ?? 0).toLocaleString()} VNĐ
-                      </Typography>
-                      <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>
-                        Số dư bị giữ: {(cardInfo.holdBalance ?? 0).toLocaleString()} VNĐ
-                      </Typography>
-                    </Paper>
-                  </Grid>
-                </Grid>
+                
+                {/* Card Preview */}
+                <Box sx={{ mb: 3, display: "flex", justifyContent: "center" }}>
+                  <CardPreview
+                    cardType={cardInfo.cardType || "VISA"}
+                    cardNumber={
+                      cardInfo.cardId
+                        ? cardInfo.cardId
+                            .toString()
+                            .replace(/\s/g, "")
+                            .replace(/(.{4})/g, "$1 ")
+                            .trim()
+                        : undefined
+                    }
+                    expiryDate={
+                      cardInfo.expiryDate
+                        ? new Date(cardInfo.expiryDate).toLocaleDateString("en-GB", {
+                            month: "2-digit",
+                            year: "2-digit",
+                          })
+                        : ""
+                    }
+                    customerName={cardInfo.customerName}
+                  />
+                </Box>
+
+                {/* Balance Info */}
+                <Box
+                  sx={{
+                    p: 2.5,
+                    borderRadius: 2,
+                    background: "linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%)",
+                  }}
+                >
+                  <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
+                    Số dư khả dụng
+                  </Typography>
+                  <Typography
+                    variant="h5"
+                    sx={{
+                      fontWeight: "bold",
+                      background: "linear-gradient(135deg, #667eea 0%, #764ba2 100%)",
+                      WebkitBackgroundClip: "text",
+                      WebkitTextFillColor: "transparent",
+                      mb: 1,
+                    }}
+                  >
+                    {(balances?.availableBalance ?? 0).toLocaleString()} VNĐ
+                  </Typography>
+                  <Typography variant="body2" color="text.secondary" sx={{ fontSize: "0.85rem" }}>
+                    Đang chờ xử lý: {(balances?.holdBalance ?? 0).toLocaleString()} VNĐ
+                  </Typography>
+                </Box>
               </CardContent>
             </Card>
           </Grid>
 
           {/* Form chuyển khoản */}
           <Grid item xs={12} md={7}>
-            <Card sx={{ boxShadow: 4 }}>
+            <Card
+              sx={{
+                boxShadow: "0 8px 32px rgba(0,0,0,0.1)",
+                borderRadius: 3,
+                background: "rgba(255, 255, 255, 0.95)",
+                backdropFilter: "blur(10px)",
+                border: "1px solid rgba(255, 255, 255, 0.18)",
+              }}
+            >
               <CardContent>
-                <Typography variant="h5" gutterBottom sx={{ fontWeight: "bold", mb: 3, color: "#1976d2" }}>
+                <Typography
+                  variant="h5"
+                  gutterBottom
+                  sx={{
+                    fontWeight: "bold",
+                    mb: 3,
+                    background: "linear-gradient(135deg, #667eea 0%, #764ba2 100%)",
+                    WebkitBackgroundClip: "text",
+                    WebkitTextFillColor: "transparent",
+                  }}
+                >
                   Thông tin người nhận
                 </Typography>
                 <Divider sx={{ mb: 3 }} />
@@ -388,17 +666,58 @@ const handleVerifyOtp = () => {
                 </Box>
 
                 {receiverInfo && (
-                  <Paper sx={{ p: 3, backgroundColor: "#f1f8e9", mb: 3, borderRadius: 2 }}>
-                    <Typography variant="subtitle1" sx={{ fontWeight: "bold", mb: 2 }}>
+                  <Box sx={{ mb: 3 }}>
+                    <Typography
+                      variant="h6"
+                      sx={{
+                        fontWeight: "bold",
+                        mb: 2,
+                        background: "linear-gradient(135deg, #43e97b 0%, #38f9d7 100%)",
+                        WebkitBackgroundClip: "text",
+                        WebkitTextFillColor: "transparent",
+                      }}
+                    >
                       Thông tin người nhận
                     </Typography>
-                    <Typography variant="body1">
-                      <strong>Số thẻ:</strong> {receiverInfo.cardId}
-                    </Typography>
-                    <Typography variant="body1">
-                      <strong>Tên người nhận:</strong> {receiverInfo.customerName}
-                    </Typography>
-                  </Paper>
+                    <Box sx={{ display: "flex", justifyContent: "center", mb: 2 }}>
+                      <CardPreview
+                        cardType={receiverInfo.cardType || "VISA"}
+                        cardNumber={
+                          receiverInfo.cardId
+                            ? receiverInfo.cardId
+                                .toString()
+                                .replace(/\s/g, "")
+                                .replace(/(.{4})/g, "$1 ")
+                                .trim()
+                            : undefined
+                        }
+                        expiryDate={
+                          receiverInfo.expiryDate
+                            ? new Date(receiverInfo.expiryDate).toLocaleDateString("en-GB", {
+                                month: "2-digit",
+                                year: "2-digit",
+                              })
+                            : ""
+                        }
+                        customerName={receiverInfo.customerName}
+                      />
+                    </Box>
+                    <Paper
+                      sx={{
+                        p: 2,
+                        backgroundColor: "#f1f8e9",
+                        borderRadius: 2,
+                        border: "1px solid rgba(76, 175, 80, 0.2)",
+                      }}
+                    >
+                      <Typography variant="body2" color="text.secondary" sx={{ mb: 0.5 }}>
+                        Tên người nhận
+                      </Typography>
+                      <Typography variant="body1" sx={{ fontWeight: "bold", color: "#2e7d32" }}>
+                        {receiverInfo.customerName}
+                      </Typography>
+                    </Paper>
+                  </Box>
                 )}
 
         {receiverInfo && (
@@ -449,10 +768,20 @@ const handleVerifyOtp = () => {
                       size="large"
                       startIcon={<SendIcon />}
                       onClick={handleConfirmTransfer}
+                      disabled={isCreatingTransaction}
                       sx={{
-                        backgroundColor: "#1976d2",
-                        "&:hover": { backgroundColor: "#1565c0" },
+                        borderRadius: 2,
+                        background: "linear-gradient(135deg, #667eea 0%, #764ba2 100%)",
+                        "&:hover": {
+                          background: "linear-gradient(135deg, #5568d3 0%, #653d8f 100%)",
+                        },
+                        "&:disabled": {
+                          background: "linear-gradient(135deg, #9e9e9e 0%, #757575 100%)",
+                          opacity: 0.7,
+                        },
+                        boxShadow: "0 4px 15px rgba(102, 126, 234, 0.4)",
                         py: 1.5,
+                        fontWeight: "600",
                       }}
                     >
                       Xác nhận chuyển khoản
@@ -486,9 +815,14 @@ const handleVerifyOtp = () => {
                       startIcon={<VerifiedUserIcon />}
                       onClick={handleVerifyOtp}
                       sx={{
-                        backgroundColor: "#4caf50",
-                        "&:hover": { backgroundColor: "#388e3c" },
+                        borderRadius: 2,
+                        background: "linear-gradient(135deg, #43e97b 0%, #38f9d7 100%)",
+                        "&:hover": {
+                          background: "linear-gradient(135deg, #38d973 0%, #2ee5c5 100%)",
+                        },
+                        boxShadow: "0 4px 15px rgba(67, 233, 123, 0.4)",
                         py: 1.5,
+                        fontWeight: "600",
                       }}
                     >
                       Xác nhận OTP

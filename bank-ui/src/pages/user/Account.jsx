@@ -254,24 +254,34 @@ export default function Account() {
       alert("Số tiền không hợp lệ!");
       return;
     }
-    fetch(`/bankservice/api/balances/deposit/${accountId}`, {
-      method: "PUT",
+    fetch(`${BANK_SERVICE_API}/transactions/deposit/${accountId}`, {
+      method: "POST",
       headers: {
         "Content-Type": "application/json",
         Authorization: `Bearer ${token}`,
       },
       body: JSON.stringify({ amount: parseFloat(transaction.amount) }),
     })
-      .then((res) => res.json())
+      .then(async (res) => {
+        if (!res.ok) {
+          const errorData = await res.json().catch(() => ({ message: "Lỗi không xác định" }));
+          throw new Error(errorData.message || "Không thể nạp tiền");
+        }
+        return res.json();
+      })
       .then((data) => {
         console.log("Deposit result:", data);
-        setBalances(data);
-        alert("Nạp tiền thành công!");
+        // Đóng form nạp tiền
+        setActiveDepositCard(null);
         setTransaction({ amount: "" });
-        setShowDepositForm(false);
+        // Cập nhật số dư ngay lập tức
         fetchBalances();
+        alert("Nạp tiền thành công!");
       })
-      .catch((err) => console.error("Error depositing:", err));
+      .catch((err) => {
+        console.error("Error depositing:", err);
+        alert(err.message || "Không thể nạp tiền. Vui lòng thử lại.");
+      });
   };
   
   const withdrawMoney = (accountId) => {
@@ -287,16 +297,26 @@ export default function Account() {
       },
       body: JSON.stringify({ amount: parseFloat(transaction.amount) }),
     })
-      .then((res) => res.json())
+      .then(async (res) => {
+        if (!res.ok) {
+          const errorData = await res.json().catch(() => ({ message: "Lỗi không xác định" }));
+          throw new Error(errorData.message || "Không thể rút tiền");
+        }
+        return res.json();
+      })
       .then((data) => {
         console.log("Withdraw result:", data);
-        setBalances(data);
-        alert("Rút tiền thành công!");
+        // Đóng form rút tiền
+        setActiveWithdrawCard(null);
         setTransaction({ amount: "" });
-        // setShowWithdrawForm(false);
+        // Cập nhật số dư ngay lập tức
         fetchBalances();
+        alert("Rút tiền thành công!");
       })
-      .catch((err) => console.error("Error withdrawing:", err));
+      .catch((err) => {
+        console.error("Error withdrawing:", err);
+        alert(err.message || "Không thể rút tiền. Vui lòng thử lại.");
+      });
   };
 
   return (
