@@ -1,24 +1,46 @@
 /* Sửa CSS cho .admin-home */
 .admin-home {
-  display: flex; /* Bật Flexbox để sắp xếp các phần tử con */
+  display: flex;
+  flex-direction: row;
   height: 100vh;
+  width: 100%;
+  position: relative;
+  padding-top: 50px; /* Space for fixed AppBar */
+  box-sizing: border-box;
 }
 
 /* Sửa CSS cho .main-content */
 .main-content {
-  /* Loại bỏ: margin-left: 220px; */
-  
-  flex-grow: 1; /* Cho phép main-content chiếm hết không gian còn lại */
-  margin-top: 50px;
+  flex: 1;
+  margin-left: 220px; /* Khoảng cách cho sidebar khi mở */
   padding: 20px;
   background-color: #ecf0f1;
-  height: calc(100vh - 50px);
+  min-height: calc(100vh - 50px);
   overflow-y: auto;
-  transition: all 0.3s ease; /* Thay đổi transition để hiệu ứng mượt hơn */
+  transition: margin-left 0.3s ease;
+  width: calc(100% - 220px);
+  box-sizing: border-box;
 }
 
 /* Thêm thuộc tính này cho main-content khi sidebar đóng */
 .main-content.expanded {
   margin-left: 0;
   width: 100%;
+}
+
+/* Responsive for mobile */
+@media (max-width: 768px) {
+  .admin-home {
+    flex-direction: column;
+  }
+  
+  .main-content {
+    padding: 12px;
+    margin-top: 50px;
+    margin-left: 0; /* Trên mobile không cần margin-left */
+  }
+  
+  .main-content.expanded {
+    margin-left: 0;
+  }
 }

@@ -20,17 +20,24 @@ import {
   CircularProgress,
   Fade,
   Grow,
+  IconButton,
+  Tooltip,
+  useMediaQuery,
+  useTheme,
 } from "@mui/material";
 import AddCardIcon from "@mui/icons-material/AddCard";
 import AccountBalanceIcon from "@mui/icons-material/AccountBalance";
 import SendIcon from "@mui/icons-material/Send";
 import AccountBalanceWalletIcon from "@mui/icons-material/AccountBalanceWallet";
 import CreditCardIcon from "@mui/icons-material/CreditCard";
+import DeleteIcon from "@mui/icons-material/Delete";
 import UserAppBar from "./UserAppBar";
 import { useNavigate } from "react-router-dom";
 import { BANK_SERVICE_API } from '../../config/api';
 
 export default function Account() {
+  const theme = useTheme();
+  const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
   const [account, setAccount] = useState(null);
   const [cards, setCards] = useState([]);
   const [balances, setBalances] = useState([]);
@@ -246,6 +253,29 @@ export default function Account() {
         setNewCard({ cardType: "", expiryDate: "", status: "ACTIVE" });
       })
       .catch((err) => console.error("Error creating card:", err));
+  };
+
+  const deleteCard = (cardId) => {
+    if (window.confirm("Bạn có chắc muốn xóa thẻ này?")) {
+      fetch(`${BANK_SERVICE_API}/api/cards/${cardId}`, {
+        method: "DELETE",
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      })
+        .then((res) => {
+          if (!res.ok) {
+            throw new Error("Không thể xóa thẻ");
+          }
+          // Cập nhật danh sách thẻ sau khi xóa
+          setCards((prev) => prev.filter((card) => card.cardId !== cardId));
+          alert("Xóa thẻ thành công!");
+        })
+        .catch((err) => {
+          console.error(err);
+          alert("Không thể xóa thẻ. Vui lòng thử lại.");
+        });
+    }
   };
 
 
@@ -464,7 +494,14 @@ export default function Account() {
         </Grow>
 
         {/* Danh sách thẻ */}
-        <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", mb: 3 }}>
+        <Box sx={{ 
+          display: "flex", 
+          justifyContent: "space-between", 
+          alignItems: { xs: "flex-start", sm: "center" },
+          flexDirection: { xs: "column", sm: "row" },
+          gap: { xs: 2, sm: 0 },
+          mb: 3 
+        }}>
           <Typography
             variant="h5"
             sx={{
@@ -472,6 +509,7 @@ export default function Account() {
               background: "linear-gradient(135deg, #667eea 0%, #764ba2 100%)",
               WebkitBackgroundClip: "text",
               WebkitTextFillColor: "transparent",
+              fontSize: { xs: "1.25rem", sm: "1.5rem" },
             }}
           >
             Danh sách thẻ của bạn
@@ -480,6 +518,7 @@ export default function Account() {
             variant="contained"
             startIcon={<AddCardIcon />}
             onClick={() => setShowForm(!showForm)}
+            size={isMobile ? "small" : "medium"}
             sx={{
               borderRadius: 2,
               background: "linear-gradient(135deg, #667eea 0%, #764ba2 100%)",
@@ -487,6 +526,7 @@ export default function Account() {
                 background: "linear-gradient(135deg, #5568d3 0%, #653d8f 100%)",
               },
               boxShadow: "0 4px 15px rgba(102, 126, 234, 0.4)",
+              width: { xs: "100%", sm: "auto" },
             }}
           >
             Tạo thẻ mới
@@ -514,104 +554,114 @@ export default function Account() {
                 >
                   Thông tin thẻ mới
                 </Typography>
+                {/* Card Preview Section - Centered */}
+                <Box sx={{ display: "flex", justifyContent: "center", mb: 4 }}>
+                  <Box sx={{ maxWidth: 400, width: "100%" }}>
+                    <CardPreview
+                      cardType={newCard.cardType || "VISA"}
+                      expiryDate={newCard.expiryDate ? new Date(newCard.expiryDate).toLocaleDateString("en-GB", { month: "2-digit", year: "2-digit" }) : ""}
+                    />
+                  </Box>
+                </Box>
+
+                {/* Divider */}
+                <Box
+                  sx={{
+                    height: 1,
+                    background: "linear-gradient(90deg, transparent, rgba(102, 126, 234, 0.3), transparent)",
+                    mb: 4,
+                  }}
+                />
+
+                {/* Form Fields Section */}
                 <Grid container spacing={3}>
                   <Grid item xs={12} md={6}>
-                    <Box sx={{ mb: 3 }}>
-                      <CardPreview
-                        cardType={newCard.cardType || "VISA"}
-                        expiryDate={newCard.expiryDate ? new Date(newCard.expiryDate).toLocaleDateString("en-GB", { month: "2-digit", year: "2-digit" }) : ""}
-                      />
-                    </Box>
+                    <TextField
+                      fullWidth
+                      label="Loại thẻ"
+                      select
+                      value={newCard.cardType}
+                      onChange={(e) => setNewCard({ ...newCard, cardType: e.target.value })}
+                      sx={{
+                        "& .MuiOutlinedInput-root": {
+                          borderRadius: 2,
+                        },
+                      }}
+                    >
+                      <MenuItem value="VISA">VISA</MenuItem>
+                      <MenuItem value="DEBIT">DEBIT</MenuItem>
+                      <MenuItem value="CREDIT">CREDIT</MenuItem>
+                    </TextField>
                   </Grid>
                   <Grid item xs={12} md={6}>
-                    <Grid container spacing={2}>
-                      <Grid item xs={12}>
-                        <TextField
-                          fullWidth
-                          label="Loại thẻ"
-                          select
-                          value={newCard.cardType}
-                          onChange={(e) => setNewCard({ ...newCard, cardType: e.target.value })}
-                          sx={{
-                            "& .MuiOutlinedInput-root": {
-                              borderRadius: 2,
-                            },
-                          }}
-                        >
-                          <MenuItem value="VISA">VISA</MenuItem>
-                          <MenuItem value="DEBIT">DEBIT</MenuItem>
-                          <MenuItem value="CREDIT">CREDIT</MenuItem>
-                        </TextField>
-                      </Grid>
-                      <Grid item xs={12}>
-                        <TextField
-                          fullWidth
-                          label="Ngày hết hạn"
-                          type="date"
-                          value={newCard.expiryDate}
-                          onChange={(e) => setNewCard({ ...newCard, expiryDate: e.target.value })}
-                          InputLabelProps={{ shrink: true }}
-                          sx={{
-                            "& .MuiOutlinedInput-root": {
-                              borderRadius: 2,
-                            },
-                          }}
-                        />
-                      </Grid>
-                      <Grid item xs={12}>
-                        <TextField
-                          fullWidth
-                          label="Trạng thái"
-                          select
-                          value={newCard.status}
-                          onChange={(e) => setNewCard({ ...newCard, status: e.target.value })}
-                          sx={{
-                            "& .MuiOutlinedInput-root": {
-                              borderRadius: 2,
-                            },
-                          }}
-                        >
-                          <MenuItem value="active">Active</MenuItem>
-                          <MenuItem value="inactive">Inactive</MenuItem>
-                        </TextField>
-                      </Grid>
-                      <Grid item xs={12}>
-                        <Box sx={{ display: "flex", gap: 2, mt: 2 }}>
-                          <Button
-                            variant="contained"
-                            onClick={createCard}
-                            sx={{
-                              flex: 1,
-                              borderRadius: 2,
-                              background: "linear-gradient(135deg, #667eea 0%, #764ba2 100%)",
-                              "&:hover": {
-                                background: "linear-gradient(135deg, #5568d3 0%, #653d8f 100%)",
-                              },
-                              py: 1.5,
-                            }}
-                          >
-                            Xác nhận tạo thẻ
-                          </Button>
-                          <Button
-                            variant="outlined"
-                            onClick={() => setShowForm(false)}
-                            sx={{
-                              flex: 1,
-                              borderRadius: 2,
-                              borderColor: "#cbd5e0",
-                              color: "#4a5568",
-                              "&:hover": {
-                                borderColor: "#a0aec0",
-                                background: "#f7fafc",
-                              },
-                              py: 1.5,
-                            }}
-                          >
-                            Hủy
-                          </Button>
-                        </Box>
-                      </Grid>
-                    </Grid>
+                    <TextField
+                      fullWidth
+                      label="Ngày hết hạn"
+                      type="date"
+                      value={newCard.expiryDate}
+                      onChange={(e) => setNewCard({ ...newCard, expiryDate: e.target.value })}
+                      InputLabelProps={{ shrink: true }}
+                      sx={{
+                        "& .MuiOutlinedInput-root": {
+                          borderRadius: 2,
+                        },
+                      }}
+                    />
+                  </Grid>
+                  <Grid item xs={12} md={6}>
+                    <TextField
+                      fullWidth
+                      label="Trạng thái"
+                      select
+                      value={newCard.status}
+                      onChange={(e) => setNewCard({ ...newCard, status: e.target.value })}
+                      sx={{
+                        "& .MuiOutlinedInput-root": {
+                          borderRadius: 2,
+                        },
+                      }}
+                    >
+                      <MenuItem value="active">Active</MenuItem>
+                      <MenuItem value="inactive">Inactive</MenuItem>
+                    </TextField>
+                  </Grid>
+                  <Grid item xs={12}>
+                    <Box sx={{ display: "flex", gap: 1.5, mt: 2, justifyContent: "flex-end" }}>
+                      <Button
+                        variant="outlined"
+                        size="small"
+                        onClick={() => setShowForm(false)}
+                        sx={{
+                          borderRadius: 2,
+                          borderColor: "#cbd5e0",
+                          color: "#4a5568",
+                          px: 2,
+                          py: 0.75,
+                          "&:hover": {
+                            borderColor: "#a0aec0",
+                            background: "#f7fafc",
+                          },
+                        }}
+                      >
+                        Hủy
+                      </Button>
+                      <Button
+                        variant="contained"
+                        size="small"
+                        onClick={createCard}
+                        sx={{
+                          borderRadius: 2,
+                          background: "linear-gradient(135deg, #667eea 0%, #764ba2 100%)",
+                          "&:hover": {
+                            background: "linear-gradient(135deg, #5568d3 0%, #653d8f 100%)",
+                          },
+                          px: 2,
+                          py: 0.75,
+                        }}
+                      >
+                        Xác nhận tạo thẻ
+                      </Button>
+                    </Box>
                   </Grid>
                 </Grid>
               </CardContent>
@@ -641,6 +691,26 @@ export default function Account() {
                     }}
                   >
                     <CardContent sx={{ p: 3 }}>
+                      {/* Card Header with Delete Button */}
+                      <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", mb: 2 }}>
+                        <Box sx={{ flex: 1 }} />
+                        <Tooltip title="Xóa thẻ">
+                          <IconButton
+                            onClick={() => deleteCard(card.cardId)}
+                            sx={{
+                              color: "#f44336",
+                              "&:hover": {
+                                backgroundColor: "rgba(244, 67, 54, 0.1)",
+                                transform: "scale(1.1)",
+                              },
+                              transition: "all 0.2s ease",
+                            }}
+                          >
+                            <DeleteIcon />
+                          </IconButton>
+                        </Tooltip>
+                      </Box>
+
                       {/* Card Preview */}
                       <Box sx={{ mb: 3 }}>
                         <CardPreview
@@ -709,14 +779,20 @@ export default function Account() {
                         </Typography>
                       </Box>
 
-                      <Box sx={{ display: "flex", gap: 1.5, flexWrap: "wrap", justifyContent: "center" }}>
+                      <Box sx={{ 
+                        display: "flex", 
+                        gap: { xs: 1, sm: 1.5 }, 
+                        flexWrap: "wrap", 
+                        justifyContent: "center" 
+                      }}>
                         <Button
                           variant="contained"
-                          size="medium"
+                          size={isMobile ? "small" : "medium"}
                           startIcon={<AccountBalanceWalletIcon />}
                           onClick={() => setActiveDepositCard(activeDepositCard === card.cardId ? null : card.cardId)}
                           sx={{
-                            flex: { xs: "1 1 100%", sm: "0 1 auto" },
+                            flex: { xs: "1 1 calc(50% - 4px)", sm: "0 1 auto" },
+                            minWidth: { xs: "auto", sm: 120 },
                             borderRadius: 2,
                             background: "linear-gradient(135deg, #43e97b 0%, #38f9d7 100%)",
                             "&:hover": {
@@ -724,17 +800,19 @@ export default function Account() {
                             },
                             boxShadow: "0 4px 15px rgba(67, 233, 123, 0.4)",
                             fontWeight: "600",
+                            fontSize: { xs: "0.75rem", sm: "0.875rem" },
                           }}
                         >
                           Nạp tiền
                         </Button>
                         <Button
                           variant="contained"
-                          size="medium"
+                          size={isMobile ? "small" : "medium"}
                           startIcon={<AccountBalanceWalletIcon />}
                           onClick={() => setActiveWithdrawCard(activeWithdrawCard === card.cardId ? null : card.cardId)}
                           sx={{
-                            flex: { xs: "1 1 100%", sm: "0 1 auto" },
+                            flex: { xs: "1 1 calc(50% - 4px)", sm: "0 1 auto" },
+                            minWidth: { xs: "auto", sm: 120 },
                             borderRadius: 2,
                             background: "linear-gradient(135deg, #fa709a 0%, #fee140 100%)",
                             "&:hover": {
@@ -742,17 +820,19 @@ export default function Account() {
                             },
                             boxShadow: "0 4px 15px rgba(250, 112, 154, 0.4)",
                             fontWeight: "600",
+                            fontSize: { xs: "0.75rem", sm: "0.875rem" },
                           }}
                         >
                           Rút tiền
                         </Button>
                         <Button
                           variant="contained"
-                          size="medium"
+                          size={isMobile ? "small" : "medium"}
                           startIcon={<SendIcon />}
                           onClick={() => handleTransfer(card.cardId)}
                           sx={{
                             flex: { xs: "1 1 100%", sm: "0 1 auto" },
+                            minWidth: { xs: "auto", sm: 140 },
                             borderRadius: 2,
                             background: "linear-gradient(135deg, #ff9800 0%, #f57c00 100%)",
                             "&:hover": {
@@ -760,6 +840,7 @@ export default function Account() {
                             },
                             boxShadow: "0 4px 15px rgba(255, 152, 0, 0.4)",
                             fontWeight: "600",
+                            fontSize: { xs: "0.75rem", sm: "0.875rem" },
                           }}
                         >
                           Chuyển khoản

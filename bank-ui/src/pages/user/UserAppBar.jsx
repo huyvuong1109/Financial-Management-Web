@@ -9,8 +9,16 @@ import {
   Badge,
   Menu,
   MenuItem,
+  Drawer,
+  List,
+  ListItem,
+  ListItemButton,
+  ListItemText,
+  useMediaQuery,
+  useTheme,
 } from "@mui/material";
 import NotificationsIcon from "@mui/icons-material/Notifications";
+import MenuIcon from "@mui/icons-material/Menu";
 import { Link, useNavigate } from "react-router-dom";
 import SockJS from "sockjs-client";
 // import { over } from "stompjs";
@@ -21,11 +29,14 @@ import { NOTIFICATION_SERVICE_API, WS_URL } from '../../config/api';
 
 export default function UserAppBar() {
   const navigate = useNavigate();
+  const theme = useTheme();
+  const isMobile = useMediaQuery(theme.breakpoints.down('md'));
   const [notifications, setNotifications] = useState([]);
   const [anchorEl, setAnchorEl] = useState(null);
   const [stompClient, setStompClient] = useState(null);
   const [userId, setUserId] = useState(null);
   const [unreadCount, setUnreadCount] = useState(0);
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   useEffect(() => {
     const token = localStorage.getItem("token");
@@ -126,90 +137,75 @@ export default function UserAppBar() {
   };
 
   const handleCloseMenu = () => setAnchorEl(null);
+  const handleMobileMenuToggle = () => setMobileMenuOpen(!mobileMenuOpen);
+
+  const menuItems = [
+    { label: "Trang Chủ", path: "/user-home" },
+    { label: "Tài Khoản", path: "/account" },
+    { label: "Lịch sử", path: "/transaction-history" },
+    { label: "Báo cáo", path: "/financial-reports" },
+  ];
 
   return (
-    <AppBar 
-      position="static" 
-      sx={{ 
-        background: "linear-gradient(135deg, #667eea 0%, #764ba2 100%)",
-        boxShadow: 3
-      }}
-    >
-      <Toolbar>
-        {/* Logo */}
-        <Typography
-          variant="h5"
-          component={Link}
-          to="/user-home"
-          sx={{ 
-            textDecoration: "none", 
-            color: "white", 
-            fontWeight: "bold",
-            mr: 4,
-            "&:hover": { opacity: 0.8 }
-          }}
-        >
-          MyBank
-        </Typography>
-  
-        {/* Menu */}
-        <Box sx={{ flexGrow: 1, display: "flex", gap: 1 }}>
-          <Button 
-            color="inherit" 
-            component={Link} 
+    <>
+      <AppBar 
+        position="static" 
+        sx={{ 
+          background: "linear-gradient(135deg, #667eea 0%, #764ba2 100%)",
+          boxShadow: 3
+        }}
+      >
+        <Toolbar>
+          {/* Mobile Menu Button */}
+          {isMobile && (
+            <IconButton
+              edge="start"
+              color="inherit"
+              onClick={handleMobileMenuToggle}
+              sx={{ mr: 2 }}
+            >
+              <MenuIcon />
+            </IconButton>
+          )}
+
+          {/* Logo */}
+          <Typography
+            variant={isMobile ? "h6" : "h5"}
+            component={Link}
             to="/user-home"
             sx={{ 
-              "&:hover": { backgroundColor: "rgba(255,255,255,0.1)" },
-              borderRadius: 1
+              textDecoration: "none", 
+              color: "white", 
+              fontWeight: "bold",
+              mr: { xs: 1, md: 4 },
+              "&:hover": { opacity: 0.8 }
             }}
           >
-            Trang Chủ
-          </Button>
-          <Button 
-            color="inherit" 
-            component={Link} 
-            to="/account"
-            sx={{ 
-              "&:hover": { backgroundColor: "rgba(255,255,255,0.1)" },
-              borderRadius: 1
-            }}
-          >
-            Tài Khoản
-          </Button>
-          <Button 
-            color="inherit" 
-            component={Link} 
-            to="/transaction-history"
-            sx={{ 
-              "&:hover": { backgroundColor: "rgba(255,255,255,0.1)" },
-              borderRadius: 1
-            }}
-          >
-            Lịch sử
-          </Button>
-          <Button 
-            color="inherit" 
-            component={Link} 
-            to="/financial-reports"
-            sx={{ 
-              "&:hover": { backgroundColor: "rgba(255,255,255,0.1)" },
-              borderRadius: 1
-            }}
-          >
-            Báo cáo
-          </Button>
-          <Button 
-            color="inherit" 
-            component={Link} 
-            to="/budget"
-            sx={{ 
-              "&:hover": { backgroundColor: "rgba(255,255,255,0.1)" },
-              borderRadius: 1
-            }}
-          >
-            Ngân sách
-          </Button>
-        </Box>
+            MyBank
+          </Typography>
+  
+          {/* Desktop Menu */}
+          {!isMobile && (
+            <Box sx={{ flexGrow: 1, display: "flex", gap: 1 }}>
+              {menuItems.map((item) => (
+                <Button 
+                  key={item.path}
+                  color="inherit" 
+                  component={Link} 
+                  to={item.path}
+                  sx={{ 
+                    "&:hover": { backgroundColor: "rgba(255,255,255,0.1)" },
+                    borderRadius: 1
+                  }}
+                >
+                  {item.label}
+                </Button>
+              ))}
+            </Box>
+          )}
+
+          {/* Mobile: Menu items in toolbar */}
+          {isMobile && <Box sx={{ flexGrow: 1 }} />}
   
         {/* Icon thông báo */}
         <IconButton 
@@ -279,16 +275,58 @@ export default function UserAppBar() {
         <Button 
           variant="contained" 
           onClick={handleLogout}
+          size={isMobile ? "small" : "medium"}
           sx={{
             backgroundColor: "#ff5722",
             "&:hover": { backgroundColor: "#e64a19" },
             borderRadius: 2,
-            px: 3
+            px: { xs: 2, md: 3 }
           }}
         >
-          Đăng Xuất
+          {isMobile ? "Đăng xuất" : "Đăng Xuất"}
         </Button>
       </Toolbar>
     </AppBar>
+
+    {/* Mobile Drawer */}
+    <Drawer
+      anchor="left"
+      open={mobileMenuOpen}
+      onClose={handleMobileMenuToggle}
+      PaperProps={{
+        sx: {
+          width: 280,
+          background: "linear-gradient(135deg, #667eea 0%, #764ba2 100%)",
+          color: "white",
+        }
+      }}
+    >
+      <Box sx={{ p: 2 }}>
+        <Typography variant="h6" sx={{ fontWeight: "bold", mb: 2 }}>
+          Menu
+        </Typography>
+        <List>
+          {menuItems.map((item) => (
+            <ListItem key={item.path} disablePadding>
+              <ListItemButton
+                component={Link}
+                to={item.path}
+                onClick={handleMobileMenuToggle}
+                sx={{
+                  borderRadius: 1,
+                  mb: 0.5,
+                  "&:hover": {
+                    backgroundColor: "rgba(255,255,255,0.1)",
+                  }
+                }}
+              >
+                <ListItemText primary={item.label} />
+              </ListItemButton>
+            </ListItem>
+          ))}
+        </List>
+      </Box>
+    </Drawer>
+    </>
   );
 }
