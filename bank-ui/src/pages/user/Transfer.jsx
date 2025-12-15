@@ -17,7 +17,12 @@ import {
   MenuItem,
   FormControl,
   InputLabel,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogActions,
 } from "@mui/material";
+import AddCircleOutlineIcon from '@mui/icons-material/AddCircleOutline';
 import ArrowBackIcon from "@mui/icons-material/ArrowBack";
 import SearchIcon from "@mui/icons-material/Search";
 import SendIcon from "@mui/icons-material/Send";
@@ -42,7 +47,64 @@ export default function Transfer() {
   const [selectedCategory, setSelectedCategory] = useState('');
   const [isCreatingTransaction, setIsCreatingTransaction] = useState(false);
   const token = localStorage.getItem("token");
+  const [openCategoryDialog, setOpenCategoryDialog] = useState(false);
+  const [newCategoryName, setNewCategoryName] = useState("");
+  const [isCreatingCategory, setIsCreatingCategory] = useState(false);
 
+  // Hàm xử lý khi chọn item trong Select
+  const handleCategoryChange = (event) => {
+    const value = event.target.value;
+    if (value === "ADD_NEW") {
+      setOpenCategoryDialog(true); // Mở popup nếu chọn "Thêm mới"
+    } else {
+      setSelectedCategory(value); // Chọn category bình thường
+    }
+  };
+
+  // Hàm gọi API tạo category
+  const handleCreateCategory = () => {
+    if (!newCategoryName.trim()) {
+      alert("Vui lòng nhập tên phân loại");
+      return;
+    }
+
+    setIsCreatingCategory(true);
+
+    const newCategoryData = {
+      categoryName: newCategoryName,
+      categoryType: "EXPENSE" // Mặc định là chi tiêu khi chuyển khoản
+    };
+
+    fetch(`${BANK_SERVICE_API}/api/category`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`,
+      },
+      body: JSON.stringify(newCategoryData),
+    })
+      .then((response) => {
+        if (!response.ok) throw new Error("Lỗi khi tạo phân loại");
+        return response.json();
+      })
+      .then((data) => {
+        // 1. Thêm category mới vào danh sách hiện tại
+        setCategories((prev) => [...prev, data]);
+        // 2. Tự động chọn category vừa tạo
+        setSelectedCategory(String(data.categoryId));
+        // 3. Reset và đóng dialog
+        setNewCategoryName("");
+        setOpenCategoryDialog(false);
+        alert("Tạo phân loại thành công!");
+      })
+      .catch((error) => {
+        console.error(error);
+        alert("Không thể tạo phân loại mới.");
+      })
+      .finally(() => {
+        setIsCreatingCategory(false);
+      });
+  };
   // Default categories with emoji
   const defaultCategories = [
     { name: "Cá nhân", emoji: "👤", type: "EXPENSE" },
@@ -745,23 +807,51 @@ const handleVerifyOtp = () => {
                       <Select
                         value={selectedCategory}
                         label="Phân loại"
-                        onChange={(e) => setSelectedCategory(e.target.value)}
+                        onChange={handleCategoryChange} // Sử dụng hàm handle mới
+                        renderValue={(selected) => {
+                          // Logic hiển thị tên khi đã chọn
+                          const cat = categories.find(c => String(c.categoryId) === selected);
+                          if (!cat) return "";
+                          const defaultCat = defaultCategories.find(dc => dc.name === cat.categoryName);
+                          return defaultCat ? `${defaultCat.emoji} ${cat.categoryName}` : `🆕 ${cat.categoryName}`;
+                        }}
                       >
+                        {/* Render danh sách category */}
                         {categories
-                          .filter(cat => defaultCategories.some(dc => dc.name === cat.categoryName))
+                          // .filter(...) <-- BỎ DÒNG FILTER NÀY ĐỂ HIỆN CATEGORY MỚI TẠO
                           .sort((a, b) => {
+                            // Logic sort cũ của bạn vẫn giữ được
                             const indexA = defaultCategories.findIndex(dc => dc.name === a.categoryName);
                             const indexB = defaultCategories.findIndex(dc => dc.name === b.categoryName);
-                            return indexA - indexB;
+                            // Đưa những cái custom xuống dưới cùng nếu không tìm thấy trong default
+                            return (indexA === -1 ? 999 : indexA) - (indexB === -1 ? 999 : indexB);
                           })
                           .map((category) => {
                             const defaultCat = defaultCategories.find(dc => dc.name === category.categoryName);
                             return (
                               <MenuItem key={category.categoryId} value={String(category.categoryId)}>
-                                {defaultCat ? `${defaultCat.emoji} ${category.categoryName}` : category.categoryName}
+                                {defaultCat ? `${defaultCat.emoji} ${category.categoryName}` : `🆕 ${category.categoryName}`}
                               </MenuItem>
                             );
                           })}
+
+                        {/* Dòng kẻ ngăn cách */}
+                        <Divider />
+                        
+                        {/* Nút thêm mới nằm ngay trong Select */}
+                        <MenuItem 
+                          value="ADD_NEW" 
+                          sx={{ 
+                            fontWeight: 'bold', 
+                            color: '#667eea',
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: 1
+                          }}
+                        >
+                          <AddCircleOutlineIcon fontSize="small" />
+                          Thêm phân loại mới
+                        </MenuItem>
                       </Select>
                     </FormControl>
                     
@@ -837,6 +927,52 @@ const handleVerifyOtp = () => {
           </Grid>
         </Grid>
       </Container>
+      {/* Dialog tạo Category mới */}
+      <Dialog 
+        open={openCategoryDialog} 
+        onClose={() => setOpenCategoryDialog(false)}
+        PaperProps={{
+          sx: { borderRadius: 3, padding: 1 }
+        }}
+      >
+        <DialogTitle sx={{ fontWeight: 'bold', textAlign: 'center' }}>
+          Tạo phân loại mới 🆕
+        </DialogTitle>
+        <DialogContent>
+          <Typography variant="body2" sx={{ mb: 2, color: 'text.secondary' }}>
+            Nhập tên cho khoản chi tiêu mới của bạn.
+          </Typography>
+          <TextField
+            autoFocus
+            margin="dense"
+            label="Tên phân loại"
+            fullWidth
+            variant="outlined"
+            value={newCategoryName}
+            onChange={(e) => setNewCategoryName(e.target.value)}
+            placeholder="Ví dụ: Du lịch, Đám cưới..."
+          />
+        </DialogContent>
+        <DialogActions sx={{ px: 3, pb: 3, justifyContent: 'space-between' }}>
+          <Button 
+            onClick={() => setOpenCategoryDialog(false)} 
+            color="inherit"
+          >
+            Hủy bỏ
+          </Button>
+          <Button 
+            onClick={handleCreateCategory} 
+            variant="contained"
+            disabled={isCreatingCategory}
+            sx={{
+              background: "linear-gradient(135deg, #667eea 0%, #764ba2 100%)",
+              px: 3
+            }}
+          >
+            {isCreatingCategory ? <CircularProgress size={24} color="inherit"/> : "Tạo mới"}
+          </Button>
+        </DialogActions>
+      </Dialog>
     </Box>
   );
 }
