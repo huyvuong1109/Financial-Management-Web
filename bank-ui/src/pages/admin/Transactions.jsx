@@ -1,7 +1,7 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import AppBar from './AppBar';
-import Sidebar from './Sidebar';
+import Sidebar from './Sidebar'; 
 import axios from 'axios';
 import {
   Box,
@@ -44,26 +44,26 @@ import {
   Assessment as AssessmentIcon,
   Email as EmailIcon,
 } from '@mui/icons-material';
-import { BANK_SERVICE_API } from '../../config/api';
+import { BANK_SERVICE_API } from '../../config/api'; 
 
 const Transactions = () => {
   const [searchParams, setSearchParams] = useSearchParams();
   const accountIdFromUrl = searchParams.get('accountId');
   
-  const [transactions, setTransactions] = useState([]);
+    const [transactions, setTransactions] = useState([]);
   const [allTransactions, setAllTransactions] = useState([]);
   const [accounts, setAccounts] = useState([]);
-  const [sidebarOpen, setSidebarOpen] = useState(true);
-  const [error, setError] = useState(null);
-  const [page, setPage] = useState(0);
-  const [size, setSize] = useState(10);
-  const [totalPages, setTotalPages] = useState(0);
-  const [transactionType, setTransactionType] = useState('');
-  const [status, setStatus] = useState('');
-  const [loading, setLoading] = useState(false);
-  const [isModalOpen, setIsModalOpen] = useState(false);
-  const [selectedTransactionId, setSelectedTransactionId] = useState(null);
-  const [isUpdateLoading, setIsUpdateLoading] = useState(false);
+    const [sidebarOpen, setSidebarOpen] = useState(true);
+    const [error, setError] = useState(null);
+    const [page, setPage] = useState(0);
+    const [size, setSize] = useState(10);
+    const [totalPages, setTotalPages] = useState(0);
+    const [transactionType, setTransactionType] = useState('');
+    const [status, setStatus] = useState('');
+    const [loading, setLoading] = useState(false);
+    const [isModalOpen, setIsModalOpen] = useState(false);
+    const [selectedTransactionId, setSelectedTransactionId] = useState(null);
+    const [isUpdateLoading, setIsUpdateLoading] = useState(false);
   const [emailFilter, setEmailFilter] = useState('');
   const [filteredAccountId, setFilteredAccountId] = useState(accountIdFromUrl || '');
 
@@ -111,8 +111,8 @@ const Transactions = () => {
     }
   }, [emailFilter, accounts, accountIdFromUrl]);
 
-  // Filter transactions theo accountId và các filter khác
-  useEffect(() => {
+  // Tính toán filtered transactions (sau filter nhưng trước pagination)
+  const filteredTransactions = useMemo(() => {
     let filtered = [...allTransactions];
     
     // Filter theo accountId
@@ -132,84 +132,97 @@ const Transactions = () => {
       filtered = filtered.filter(t => t.status === status);
     }
     
-    // Pagination
+    return filtered;
+  }, [filteredAccountId, allTransactions, transactionType, status]);
+
+  // Tính toán stats từ filtered transactions
+  const stats = useMemo(() => {
+    return {
+      total: filteredTransactions.length,
+      approved: filteredTransactions.filter(t => t.status === 'APPROVED').length,
+      awaitingApproval: filteredTransactions.filter(t => t.status === 'AWAITING_APPROVAL').length,
+    };
+  }, [filteredTransactions]);
+
+  // Pagination và set transactions để hiển thị
+    useEffect(() => {
     const startIndex = page * size;
     const endIndex = startIndex + size;
-    const paginatedTransactions = filtered.slice(startIndex, endIndex);
+    const paginatedTransactions = filteredTransactions.slice(startIndex, endIndex);
     
     setTransactions(paginatedTransactions);
-    setTotalPages(Math.ceil(filtered.length / size));
-  }, [filteredAccountId, allTransactions, size, page, transactionType, status]);
+    setTotalPages(Math.ceil(filteredTransactions.length / size));
+  }, [filteredTransactions, size, page]);
 
   const fetchAllTransactions = async () => {
-    setLoading(true);
-    setError(null);
-    try {
+        setLoading(true);
+        setError(null);
+        try {
       // Fetch tất cả transactions (không filter ở backend)
       const url = `${BANK_SERVICE_API}/transactions/all?page=0&size=1000&transactionType=&status=`;
-      
-      const response = await axios.get(url, {
-        headers: {
-          "Authorization": `Bearer ${token}`,
-          "Content-Type": "application/json"
-        }
-      });
-      
+            
+            const response = await axios.get(url, {
+                headers: {
+                    "Authorization": `Bearer ${token}`,
+                    "Content-Type": "application/json"
+                }
+            });
+            
       setAllTransactions(response.data.content);
-    } catch (err) {
-      setError("Không thể tải danh sách giao dịch. Vui lòng kiểm tra kết nối hoặc token.");
-      console.error(err);
-    } finally {
-      setLoading(false);
-    }
-  };
+        } catch (err) {
+      setError("Unable to load transaction list. Please check your connection or token.");
+            console.error(err);
+        } finally {
+            setLoading(false);
+        }
+    };
 
-  const handleUpdateSuccess = (transactionId) => {
-    setSelectedTransactionId(transactionId);
-    setIsModalOpen(true);
-  };
+    const handleUpdateSuccess = (transactionId) => {
+        setSelectedTransactionId(transactionId);
+        setIsModalOpen(true);
+    };
     
-  const handleApprove = async () => {
-    setIsUpdateLoading(true);
-    setError(null);
-    try {
-      const url = `${BANK_SERVICE_API}/transactions/${selectedTransactionId}/approve`;
+    const handleApprove = async () => {
+        setIsUpdateLoading(true);
+        setError(null);
+        try {
+            const url = `${BANK_SERVICE_API}/transactions/${selectedTransactionId}/approve`;
       await axios.post(url, {}, {
-        headers: {
-          "Authorization": `Bearer ${token}`,
-          "Content-Type": "application/json"
-        }
-      });
-      setIsModalOpen(false);
+                headers: {
+                    "Authorization": `Bearer ${token}`,
+                    "Content-Type": "application/json"
+                }
+            });
+            setIsModalOpen(false);
       fetchAllTransactions(); 
-    } catch (err) {
-      setError("Không thể phê duyệt giao dịch.");
-      console.error("Error approving transaction:", err);
-    } finally {
-      setIsUpdateLoading(false);
-    }
-  };
-    
-  const handleReject = async () => {
-    setIsUpdateLoading(true);
-    setError(null);
-    try {
-      const url = `${BANK_SERVICE_API}/transactions/${selectedTransactionId}/reject`;
-      await axios.post(url, {}, {
-        headers: {
-          "Authorization": `Bearer ${token}`,
-          "Content-Type": "application/json"
+        } catch (err) {
+      setError("Unable to approve transaction.");
+            console.error("Error approving transaction:", err);
+        } finally {
+            setIsUpdateLoading(false);
         }
-      });
-      setIsModalOpen(false);
+    };
+    
+    const handleReject = async () => {
+        setIsUpdateLoading(true);
+        setError(null);
+        try {
+            const url = `${BANK_SERVICE_API}/transactions/${selectedTransactionId}/reject`;
+      await axios.post(url, {}, {
+                headers: {
+                    "Authorization": `Bearer ${token}`,
+                    "Content-Type": "application/json"
+                }
+            });
+            setIsModalOpen(false);
       fetchAllTransactions();
-    } catch (err) {
-      setError("Không thể từ chối giao dịch.");
-      console.error("Error rejecting transaction:", err);
-    } finally {
-      setIsUpdateLoading(false);
-    }
-  };
+        } catch (err) {
+      setError("Unable to reject transaction.");
+            console.error("Error rejecting transaction:", err);
+        } finally {
+            setIsUpdateLoading(false);
+        }
+    };
 
   const handlePageChange = (event, newPage) => {
     setPage(newPage - 1);
@@ -277,20 +290,20 @@ const Transactions = () => {
     setStatus('');
     setSearchParams({});
   };
-
-  return (
+    
+    return (
     <div className="admin-home">
-      <AppBar onToggleSidebar={() => setSidebarOpen(!sidebarOpen)} />
-      <Sidebar isOpen={sidebarOpen} />
+            <AppBar onToggleSidebar={() => setSidebarOpen(!sidebarOpen)} />
+            <Sidebar isOpen={sidebarOpen} />
 
-      <main className={`main-content ${sidebarOpen ? "" : "expanded"}`}>
+            <main className={`main-content ${sidebarOpen ? "" : "expanded"}`}>
         <Container maxWidth="xl" sx={{ py: 4 }}>
           {/* Header */}
           <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", mb: 4 }}>
             <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
               <AssessmentIcon sx={{ fontSize: 40, color: "#1976d2" }} />
               <Typography variant="h4" sx={{ fontWeight: "bold", color: "#1976d2" }}>
-                Lịch sử giao dịch
+                Transaction History
               </Typography>
             </Box>
             {(filteredAccountId || emailFilter || transactionType || status) && (
@@ -299,7 +312,7 @@ const Transactions = () => {
                 onClick={clearFilters}
                 sx={{ textTransform: "none" }}
               >
-                Xóa bộ lọc
+                Clear Filters
               </Button>
             )}
           </Box>
@@ -316,15 +329,15 @@ const Transactions = () => {
               <Box sx={{ display: "flex", alignItems: "center", gap: 1, mb: 2 }}>
                 <FilterListIcon color="primary" />
                 <Typography variant="h6" sx={{ fontWeight: "bold" }}>
-                  Bộ lọc
+                  Filters
                 </Typography>
               </Box>
               <Grid container spacing={2}>
                 <Grid item xs={12} md={4}>
                   <TextField
                     fullWidth
-                    label="Lọc theo email"
-                    placeholder="Nhập email người dùng..."
+                    label="Filter by email"
+                    placeholder="Enter user email..."
                     value={emailFilter}
                     onChange={(e) => setEmailFilter(e.target.value)}
                     InputProps={{
@@ -337,40 +350,80 @@ const Transactions = () => {
                   />
                   {filteredAccountId && (
                     <Typography variant="caption" color="text.secondary" sx={{ mt: 1, display: "block" }}>
-                      Tìm thấy: {getAccountName(filteredAccountId)} ({getAccountEmail(filteredAccountId)})
+                      Found: {getAccountName(filteredAccountId)} ({getAccountEmail(filteredAccountId)})
                     </Typography>
                   )}
                 </Grid>
                 <Grid item xs={12} md={4}>
-                  <FormControl fullWidth>
-                    <InputLabel>Loại giao dịch</InputLabel>
+                  <FormControl fullWidth sx={{ minWidth: 250 }}>
+                    <InputLabel id="transaction-type-label">Transaction Type</InputLabel>
                     <Select
+                      labelId="transaction-type-label"
                       value={transactionType}
-                      label="Loại giao dịch"
+                      label="Transaction Type"
                       onChange={(e) => setTransactionType(e.target.value)}
+                      sx={{
+                        minWidth: 250,
+                        "& .MuiSelect-select": {
+                          py: 1.5,
+                          fontSize: "1rem",
+                          fontWeight: 500,
+                        },
+                      }}
+                      MenuProps={{
+                        PaperProps: {
+                          sx: {
+                            minWidth: 250,
+                            "& .MuiMenuItem-root": {
+                              py: 1.5,
+                              fontSize: "1rem",
+                            },
+                          },
+                        },
+                      }}
                     >
-                      <MenuItem value="">Tất cả</MenuItem>
-                      <MenuItem value="DEPOSIT">Nạp tiền</MenuItem>
-                      <MenuItem value="WITHDRAWAL">Rút tiền</MenuItem>
-                      <MenuItem value="TRANSFER">Chuyển tiền</MenuItem>
+                      <MenuItem value="">All</MenuItem>
+                      <MenuItem value="DEPOSIT">Deposit</MenuItem>
+                      <MenuItem value="WITHDRAWAL">Withdrawal</MenuItem>
+                      <MenuItem value="TRANSFER">Transfer</MenuItem>
                     </Select>
                   </FormControl>
                 </Grid>
                 <Grid item xs={12} md={4}>
-                  <FormControl fullWidth>
-                    <InputLabel>Trạng thái</InputLabel>
+                  <FormControl fullWidth sx={{ minWidth: 250 }}>
+                    <InputLabel id="status-label">Status</InputLabel>
                     <Select
+                      labelId="status-label"
                       value={status}
-                      label="Trạng thái"
+                      label="Status"
                       onChange={(e) => setStatus(e.target.value)}
+                      sx={{
+                        minWidth: 250,
+                        "& .MuiSelect-select": {
+                          py: 1.5,
+                          fontSize: "1rem",
+                          fontWeight: 500,
+                        },
+                      }}
+                      MenuProps={{
+                        PaperProps: {
+                          sx: {
+                            minWidth: 250,
+                            "& .MuiMenuItem-root": {
+                              py: 1.5,
+                              fontSize: "1rem",
+                            },
+                          },
+                        },
+                      }}
                     >
-                      <MenuItem value="">Tất cả</MenuItem>
-                      <MenuItem value="PENDING">Đang chờ</MenuItem>
-                      <MenuItem value="APPROVED">Đã phê duyệt</MenuItem>
-                      <MenuItem value="REJECTED">Đã từ chối</MenuItem>
-                      <MenuItem value="EXPIRED">Hết hạn</MenuItem>
-                      <MenuItem value="FAILED">Thất bại</MenuItem>
-                      <MenuItem value="AWAITING_APPROVAL">Chờ phê duyệt</MenuItem>
+                      <MenuItem value="">All</MenuItem>
+                      <MenuItem value="PENDING">Pending</MenuItem>
+                      <MenuItem value="APPROVED">Approved</MenuItem>
+                      <MenuItem value="REJECTED">Rejected</MenuItem>
+                      <MenuItem value="EXPIRED">Expired</MenuItem>
+                      <MenuItem value="FAILED">Failed</MenuItem>
+                      <MenuItem value="AWAITING_APPROVAL">Awaiting Approval</MenuItem>
                     </Select>
                   </FormControl>
                 </Grid>
@@ -390,10 +443,10 @@ const Transactions = () => {
               >
                 <CardContent>
                   <Typography variant="body2" sx={{ opacity: 0.9, mb: 1 }}>
-                    Tổng số giao dịch
+                    Total Transactions
                   </Typography>
                   <Typography variant="h4" sx={{ fontWeight: "bold" }}>
-                    {transactions.length}
+                    {stats.total}
                   </Typography>
                 </CardContent>
               </Card>
@@ -408,10 +461,10 @@ const Transactions = () => {
               >
                 <CardContent>
                   <Typography variant="body2" sx={{ opacity: 0.9, mb: 1 }}>
-                    Đã phê duyệt
+                    Approved
                   </Typography>
                   <Typography variant="h4" sx={{ fontWeight: "bold" }}>
-                    {transactions.filter(t => t.status === 'APPROVED').length}
+                    {stats.approved}
                   </Typography>
                 </CardContent>
               </Card>
@@ -426,10 +479,10 @@ const Transactions = () => {
               >
                 <CardContent>
                   <Typography variant="body2" sx={{ opacity: 0.9, mb: 1 }}>
-                    Chờ phê duyệt
+                    Awaiting Approval
                   </Typography>
                   <Typography variant="h4" sx={{ fontWeight: "bold" }}>
-                    {transactions.filter(t => t.status === 'AWAITING_APPROVAL').length}
+                    {stats.awaitingApproval}
                   </Typography>
                 </CardContent>
               </Card>
@@ -438,15 +491,15 @@ const Transactions = () => {
 
           {/* Transactions Table */}
           <Card sx={{ boxShadow: 4, borderRadius: 3, overflow: "hidden" }}>
-            <TableContainer>
-              {loading ? (
+            <TableContainer sx={{ overflowX: "auto" }}>
+                {loading ? (
                 <Box sx={{ display: "flex", justifyContent: "center", p: 4 }}>
                   <CircularProgress />
                 </Box>
               ) : transactions.length === 0 ? (
                 <Box sx={{ textAlign: "center", p: 6 }}>
                   <Typography variant="h6" color="text.secondary">
-                    Không tìm thấy giao dịch nào
+                    No transactions found
                   </Typography>
                 </Box>
               ) : (
@@ -455,13 +508,13 @@ const Transactions = () => {
                     <TableHead>
                       <TableRow sx={{ background: "linear-gradient(135deg, #667eea 0%, #764ba2 100%)" }}>
                         <TableCell sx={{ color: "white", fontWeight: "bold" }}>ID</TableCell>
-                        <TableCell sx={{ color: "white", fontWeight: "bold" }}>Từ tài khoản</TableCell>
-                        <TableCell sx={{ color: "white", fontWeight: "bold" }}>Đến tài khoản</TableCell>
-                        <TableCell sx={{ color: "white", fontWeight: "bold" }}>Số tiền</TableCell>
-                        <TableCell sx={{ color: "white", fontWeight: "bold" }}>Loại</TableCell>
-                        <TableCell sx={{ color: "white", fontWeight: "bold" }}>Trạng thái</TableCell>
+                        <TableCell sx={{ color: "white", fontWeight: "bold" }}>From Account</TableCell>
+                        <TableCell sx={{ color: "white", fontWeight: "bold" }}>To Account</TableCell>
+                        <TableCell sx={{ color: "white", fontWeight: "bold" }}>Amount</TableCell>
+                        <TableCell sx={{ color: "white", fontWeight: "bold" }}>Type</TableCell>
+                        <TableCell sx={{ color: "white", fontWeight: "bold" }}>Status</TableCell>
                         <TableCell sx={{ color: "white", fontWeight: "bold" }} align="center">
-                          Hành động
+                          Actions
                         </TableCell>
                       </TableRow>
                     </TableHead>
@@ -530,7 +583,7 @@ const Transactions = () => {
                             />
                           </TableCell>
                           <TableCell align="center">
-                            <Tooltip title="Cập nhật trạng thái">
+                            <Tooltip title="Update Status">
                               <Button
                                 variant="contained"
                                 size="small"
@@ -550,7 +603,7 @@ const Transactions = () => {
                                   },
                                 }}
                               >
-                                Cập nhật
+                                Update
                               </Button>
                             </Tooltip>
                           </TableCell>
@@ -576,12 +629,12 @@ const Transactions = () => {
           <Dialog open={isModalOpen} onClose={() => setIsModalOpen(false)} maxWidth="sm" fullWidth>
             <DialogTitle>
               <Typography variant="h5" sx={{ fontWeight: "bold" }}>
-                Cập nhật trạng thái giao dịch
+                Update Transaction Status
               </Typography>
             </DialogTitle>
             <DialogContent>
               <Typography>
-                Bạn có chắc chắn muốn thay đổi trạng thái của giao dịch này?
+                Are you sure you want to change the status of this transaction?
               </Typography>
             </DialogContent>
             <DialogActions sx={{ p: 3 }}>
@@ -592,16 +645,16 @@ const Transactions = () => {
                 onClick={handleReject}
                 variant="contained"
                 color="error"
-                disabled={isUpdateLoading}
+                                    disabled={isUpdateLoading}
                 sx={{ mr: 1 }}
               >
-                {isUpdateLoading ? "Đang xử lý..." : "Từ chối"}
+                {isUpdateLoading ? "Processing..." : "Reject"}
               </Button>
               <Button
                 onClick={handleApprove}
                 variant="contained"
                 color="success"
-                disabled={isUpdateLoading}
+                                    disabled={isUpdateLoading}
                 sx={{
                   background: "linear-gradient(135deg, #43e97b 0%, #38f9d7 100%)",
                   "&:hover": {
@@ -609,14 +662,14 @@ const Transactions = () => {
                   },
                 }}
               >
-                {isUpdateLoading ? "Đang xử lý..." : "Phê duyệt"}
+                {isUpdateLoading ? "Processing..." : "Approve"}
               </Button>
             </DialogActions>
           </Dialog>
         </Container>
-      </main>
-    </div>
-  );
+            </main>
+        </div>
+    );
 };
 
 export default Transactions;

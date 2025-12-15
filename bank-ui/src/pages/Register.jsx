@@ -44,10 +44,10 @@ const Register = () => {
     setLoading(true);
     try {
       await register(formData);
-      alert('Đăng ký thành công!');
+      alert('Registration successful!');
       navigate('/login');
     } catch (err) {
-      alert('Đăng ký thất bại: ' + (err.response?.data?.message || err.message));
+      alert('Registration failed: ' + (err.response?.data?.message || err.message));
     } finally {
       setLoading(false);
     }
@@ -105,7 +105,7 @@ const Register = () => {
                   MyBank
                 </Typography>
                 <Typography variant="body1" sx={{ mt: 1, opacity: 0.9 }}>
-                  Tạo tài khoản mới
+                  Create a new account
                 </Typography>
               </Box>
 
@@ -116,7 +116,7 @@ const Register = () => {
                       <TextField
                         fullWidth
                         name="customerName"
-                        label="Tên khách hàng"
+                        label="Customer Name"
                         value={formData.customerName}
                         onChange={handleChange}
                         required
@@ -153,7 +153,7 @@ const Register = () => {
                       <TextField
                         fullWidth
                         name="phoneNumber"
-                        label="Số điện thoại"
+                        label="Phone Number"
                         value={formData.phoneNumber}
                         onChange={handleChange}
                         required
@@ -171,7 +171,7 @@ const Register = () => {
                       <TextField
                         fullWidth
                         name="password"
-                        label="Mật khẩu"
+                        label="Password"
                         type={showPassword ? 'text' : 'password'}
                         value={formData.password}
                         onChange={handleChange}
@@ -215,14 +215,14 @@ const Register = () => {
                           boxShadow: '0 4px 15px rgba(102, 126, 234, 0.4)',
                         }}
                       >
-                        {loading ? 'Đang đăng ký...' : 'Đăng ký'}
+                        {loading ? 'Registering...' : 'Register'}
                       </Button>
                     </Grid>
 
                     <Grid item xs={12}>
                       <Box sx={{ textAlign: 'center' }}>
                         <Typography variant="body2" sx={{ color: '#666' }}>
-                          Đã có tài khoản?{' '}
+                          Already have an account?{' '}
                           <Link
                             component="button"
                             variant="body2"
@@ -236,7 +236,7 @@ const Register = () => {
                               },
                             }}
                           >
-                            Đăng nhập ngay
+                            Login now
                           </Link>
                         </Typography>
                       </Box>

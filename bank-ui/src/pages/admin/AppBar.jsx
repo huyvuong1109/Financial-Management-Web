@@ -20,7 +20,7 @@ export default function AppBar({ onToggleSidebar }) {
           color="secondary"
           onClick={handleLogout}
         >
-          Đăng Xuất
+          Logout
         </Button>
     </header>
   );

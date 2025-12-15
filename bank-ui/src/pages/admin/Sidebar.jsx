@@ -19,7 +19,7 @@ export default function Sidebar({ isOpen }) {
           <Link to="/Transactions">Transactions</Link>
         </li>
         <li>
-          <Link to="/AdminFinancialReports">Báo Cáo Tài Chính</Link>
+          <Link to="/AdminFinancialReports">Financial Reports</Link>
         </li>
       </ul>
     </aside>

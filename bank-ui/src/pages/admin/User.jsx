@@ -73,7 +73,7 @@ export default function AdminHome() {
 
   const fetchAccounts = () => {
     if (!token) {
-      setError("Bạn chưa đăng nhập.");
+      setError("You are not logged in.");
       return;
     }
 
@@ -87,7 +87,7 @@ export default function AdminHome() {
       .then(async (res) => {
         if (!res.ok) {
           const msg = await res.text();
-          throw new Error(msg || `Lỗi ${res.status}`);
+          throw new Error(msg || `Error ${res.status}`);
         }
         return res.json();
       })
@@ -97,7 +97,7 @@ export default function AdminHome() {
       })
       .catch(err => {
         console.error(err);
-        setError("Không thể tải danh sách tài khoản. Hãy đăng nhập lại.");
+        setError("Unable to load account list. Please log in again.");
       })
       .finally(() => {
         setLoading(false);
@@ -155,12 +155,12 @@ export default function AdminHome() {
       })
       .catch(err => {
         console.error(err);
-        alert("Không thể lưu account. Vui lòng thử lại.");
+        alert("Unable to save account. Please try again.");
       });
   };
 
   const handleDelete = (id) => {
-    if (window.confirm("Bạn có chắc muốn xóa?")) {
+    if (window.confirm("Are you sure you want to delete?")) {
       fetch(`${API_BASE}/${id}`, {
         method: "DELETE",
         headers: {
@@ -170,7 +170,7 @@ export default function AdminHome() {
         .then(() => fetchAccounts())
         .catch(err => {
           console.error(err);
-          alert("Không thể xóa account.");
+          alert("Unable to delete account.");
         });
     }
   };
@@ -198,7 +198,7 @@ export default function AdminHome() {
       });
       
       if (!response.ok) {
-        throw new Error("Không thể tải số dư");
+        throw new Error("Unable to load balance");
       }
       
       const balances = await response.json();
@@ -223,7 +223,7 @@ export default function AdminHome() {
       }
     } catch (err) {
       console.error("Error fetching balance:", err);
-      setError("Không thể tải số dư. Vui lòng thử lại.");
+      setError("Unable to load balance. Please try again.");
       // Tạo object mặc định với thông tin user
       setSelectedUserBalance({
         accountId: accountId,
@@ -261,7 +261,7 @@ export default function AdminHome() {
           {/* Header */}
           <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", mb: 4 }}>
             <Typography variant="h4" sx={{ fontWeight: "bold", color: "#1976d2" }}>
-              Quản lý người dùng
+              User Management
             </Typography>
             <Button
               variant="contained"
@@ -275,7 +275,7 @@ export default function AdminHome() {
                 boxShadow: 3,
               }}
             >
-              Thêm tài khoản
+              Add Account
             </Button>
           </Box>
 
@@ -300,7 +300,7 @@ export default function AdminHome() {
                   <Box sx={{ display: "flex", alignItems: "center", mb: 1 }}>
                     <PeopleIcon sx={{ mr: 1, fontSize: 30 }} />
                     <Typography variant="body2" sx={{ opacity: 0.9 }}>
-                      Tổng số tài khoản
+                      Total Accounts
                     </Typography>
                   </Box>
                   <Typography variant="h3" sx={{ fontWeight: "bold" }}>
@@ -322,7 +322,7 @@ export default function AdminHome() {
                   <Box sx={{ display: "flex", alignItems: "center", mb: 1 }}>
                     <AdminIcon sx={{ mr: 1, fontSize: 30 }} />
                     <Typography variant="body2" sx={{ opacity: 0.9 }}>
-                      Quản trị viên
+                      Administrators
                     </Typography>
                   </Box>
                   <Typography variant="h3" sx={{ fontWeight: "bold" }}>
@@ -344,7 +344,7 @@ export default function AdminHome() {
                   <Box sx={{ display: "flex", alignItems: "center", mb: 1 }}>
                     <PersonIcon sx={{ mr: 1, fontSize: 30 }} />
                     <Typography variant="body2" sx={{ opacity: 0.9 }}>
-                      Người dùng
+                      Users
                     </Typography>
                   </Box>
                   <Typography variant="h3" sx={{ fontWeight: "bold" }}>
@@ -358,31 +358,34 @@ export default function AdminHome() {
           {/* Search and Filter */}
           <Box sx={{ display: "flex", gap: 2, mb: 3, flexWrap: "wrap" }}>
             <TextField
-              placeholder="Tìm kiếm theo tên hoặc email..."
+              placeholder="Search by name or email..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
               InputProps={{
                 startAdornment: <SearchIcon sx={{ mr: 1, color: "action.active" }} />,
               }}
-              sx={{ flexGrow: 1, minWidth: 300 }}
+              sx={{ 
+                flexGrow: 1, 
+                minWidth: { xs: "100%", sm: 250, md: 300 } 
+              }}
             />
-            <FormControl sx={{ minWidth: 200 }}>
-              <InputLabel>Vai trò</InputLabel>
+            <FormControl sx={{ minWidth: { xs: "100%", sm: 200 } }}>
+              <InputLabel>Role</InputLabel>
               <Select
                 value={roleFilter}
-                label="Vai trò"
+                label="Role"
                 onChange={(e) => setRoleFilter(e.target.value)}
               >
-                <MenuItem value="ALL">Tất cả vai trò</MenuItem>
-                <MenuItem value="ADMIN">Quản trị viên</MenuItem>
-                <MenuItem value="USER">Người dùng</MenuItem>
+                <MenuItem value="ALL">All Roles</MenuItem>
+                <MenuItem value="ADMIN">Administrator</MenuItem>
+                <MenuItem value="USER">User</MenuItem>
               </Select>
             </FormControl>
           </Box>
 
           {/* Table */}
           <Card sx={{ boxShadow: 4, borderRadius: 3, overflow: "hidden" }}>
-            <TableContainer>
+            <TableContainer sx={{ overflowX: "auto" }}>
               {loading ? (
                 <Box sx={{ display: "flex", justifyContent: "center", p: 4 }}>
                   <CircularProgress />
@@ -391,8 +394,8 @@ export default function AdminHome() {
                 <Box sx={{ textAlign: "center", p: 6 }}>
                   <Typography variant="h6" color="text.secondary">
                     {accounts.length === 0
-                      ? "Chưa có tài khoản nào"
-                      : "Không tìm thấy tài khoản phù hợp"}
+                      ? "No accounts yet"
+                      : "No matching accounts found"}
                   </Typography>
                 </Box>
               ) : (
@@ -400,12 +403,12 @@ export default function AdminHome() {
                   <TableHead>
                     <TableRow sx={{ background: "linear-gradient(135deg, #667eea 0%, #764ba2 100%)" }}>
                       <TableCell sx={{ color: "white", fontWeight: "bold" }}>ID</TableCell>
-                      <TableCell sx={{ color: "white", fontWeight: "bold" }}>Tên khách hàng</TableCell>
+                      <TableCell sx={{ color: "white", fontWeight: "bold" }}>Customer Name</TableCell>
                       <TableCell sx={{ color: "white", fontWeight: "bold" }}>Email</TableCell>
-                      <TableCell sx={{ color: "white", fontWeight: "bold" }}>Số điện thoại</TableCell>
-                      <TableCell sx={{ color: "white", fontWeight: "bold" }}>Vai trò</TableCell>
+                      <TableCell sx={{ color: "white", fontWeight: "bold" }}>Phone Number</TableCell>
+                      <TableCell sx={{ color: "white", fontWeight: "bold" }}>Role</TableCell>
                       <TableCell sx={{ color: "white", fontWeight: "bold" }} align="center">
-                        Hành động
+                        Actions
                       </TableCell>
                     </TableRow>
                   </TableHead>
@@ -431,10 +434,16 @@ export default function AdminHome() {
                           />
                         </TableCell>
                         <TableCell align="center">
-                          <Box sx={{ display: "flex", gap: 1, justifyContent: "center" }}>
-                            <Tooltip title="Báo cáo giao dịch">
+                          <Box sx={{ 
+                            display: "flex", 
+                            gap: { xs: 0.5, sm: 1 }, 
+                            justifyContent: "center",
+                            flexWrap: { xs: "wrap", sm: "nowrap" }
+                          }}>
+                            <Tooltip title="Transaction Report">
                               <IconButton
                                 color="info"
+                                size="small"
                                 onClick={() => handleViewReport(acc.accountId)}
                                 sx={{
                                   background: "linear-gradient(135deg, #4facfe 0%, #00f2fe 100%)",
@@ -446,12 +455,13 @@ export default function AdminHome() {
                                   boxShadow: 2,
                                 }}
                               >
-                                <ReportIcon />
+                                <ReportIcon fontSize="small" />
                               </IconButton>
                             </Tooltip>
-                            <Tooltip title="Báo cáo tài chính">
+                            <Tooltip title="Financial Report">
                               <IconButton
                                 color="success"
+                                size="small"
                                 onClick={() => handleViewFinancialReport(acc.accountId)}
                                 sx={{
                                   background: "linear-gradient(135deg, #43e97b 0%, #38f9d7 100%)",
@@ -463,12 +473,13 @@ export default function AdminHome() {
                                   boxShadow: 2,
                                 }}
                               >
-                                <BarChartIcon />
+                                <BarChartIcon fontSize="small" />
                               </IconButton>
                             </Tooltip>
-                            <Tooltip title="Số dư">
+                            <Tooltip title="Balance">
                               <IconButton
                                 color="warning"
+                                size="small"
                                 onClick={() => handleViewBalance(acc.accountId, acc.customerName, acc.email)}
                                 sx={{
                                   background: "linear-gradient(135deg, #f093fb 0%, #f5576c 100%)",
@@ -480,12 +491,13 @@ export default function AdminHome() {
                                   boxShadow: 2,
                                 }}
                               >
-                                <AccountBalanceIcon />
+                                <AccountBalanceIcon fontSize="small" />
                               </IconButton>
                             </Tooltip>
-                            <Tooltip title="Chỉnh sửa">
+                            <Tooltip title="Edit">
                               <IconButton
                                 color="primary"
+                                size="small"
                                 onClick={() => openModal(acc)}
                                 sx={{
                                   "&:hover": {
@@ -493,12 +505,13 @@ export default function AdminHome() {
                                   },
                                 }}
                               >
-                                <EditIcon />
+                                <EditIcon fontSize="small" />
                               </IconButton>
                             </Tooltip>
-                            <Tooltip title="Xóa">
+                            <Tooltip title="Delete">
                               <IconButton
                                 color="error"
+                                size="small"
                                 onClick={() => handleDelete(acc.accountId)}
                                 sx={{
                                   "&:hover": {
@@ -506,7 +519,7 @@ export default function AdminHome() {
                                   },
                                 }}
                               >
-                                <DeleteIcon />
+                                <DeleteIcon fontSize="small" />
                               </IconButton>
                             </Tooltip>
                           </Box>
@@ -523,13 +536,13 @@ export default function AdminHome() {
           <Dialog open={isModalOpen} onClose={() => setIsModalOpen(false)} maxWidth="sm" fullWidth>
             <DialogTitle>
               <Typography variant="h5" sx={{ fontWeight: "bold" }}>
-                {editingAccount ? "Chỉnh sửa tài khoản" : "Thêm tài khoản mới"}
+                {editingAccount ? "Edit Account" : "Add New Account"}
               </Typography>
             </DialogTitle>
             <DialogContent>
               <Box sx={{ display: "flex", flexDirection: "column", gap: 3, mt: 1 }}>
                 <TextField
-                  label="Tên khách hàng"
+                  label="Customer Name"
                   required
                   fullWidth
                   value={formData.customerName}
@@ -544,7 +557,7 @@ export default function AdminHome() {
                   onChange={(e) => setFormData({ ...formData, email: e.target.value })}
                 />
                 <TextField
-                  label="Số điện thoại"
+                  label="Phone Number"
                   required
                   fullWidth
                   value={formData.phoneNumber}
@@ -552,7 +565,7 @@ export default function AdminHome() {
                 />
                 {!editingAccount && (
                   <TextField
-                    label="Mật khẩu"
+                    label="Password"
                     type="password"
                     required
                     fullWidth
@@ -561,21 +574,21 @@ export default function AdminHome() {
                   />
                 )}
                 <FormControl fullWidth>
-                  <InputLabel>Vai trò</InputLabel>
+                  <InputLabel>Role</InputLabel>
                   <Select
                     value={formData.role}
-                    label="Vai trò"
+                    label="Role"
                     onChange={(e) => setFormData({ ...formData, role: e.target.value })}
                   >
-                    <MenuItem value="USER">Người dùng</MenuItem>
-                    <MenuItem value="ADMIN">Quản trị viên</MenuItem>
+                    <MenuItem value="USER">User</MenuItem>
+                    <MenuItem value="ADMIN">Administrator</MenuItem>
                   </Select>
                 </FormControl>
               </Box>
             </DialogContent>
             <DialogActions sx={{ p: 3 }}>
               <Button onClick={() => setIsModalOpen(false)} color="inherit">
-                Hủy
+                Cancel
               </Button>
               <Button
                 onClick={handleSave}
@@ -588,7 +601,7 @@ export default function AdminHome() {
                 }}
                 startIcon={<AddIcon />}
               >
-                Lưu
+                Save
               </Button>
             </DialogActions>
           </Dialog>
@@ -604,7 +617,7 @@ export default function AdminHome() {
               <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
                 <AccountBalanceIcon sx={{ fontSize: 30, color: "#1976d2" }} />
                 <Typography variant="h5" sx={{ fontWeight: "bold" }}>
-                  Số dư tài khoản
+                  Account Balance
                 </Typography>
               </Box>
             </DialogTitle>
@@ -619,7 +632,7 @@ export default function AdminHome() {
                   <Card sx={{ mb: 3, boxShadow: 2, borderRadius: 2 }}>
                     <CardContent>
                       <Typography variant="subtitle2" color="text.secondary" gutterBottom>
-                        Thông tin tài khoản
+                        Account Information
                       </Typography>
                       <Typography variant="h6" sx={{ fontWeight: "bold", mb: 1 }}>
                         {selectedUserBalance.customerName}
@@ -638,9 +651,9 @@ export default function AdminHome() {
                     <Table>
                       <TableHead>
                         <TableRow sx={{ background: "linear-gradient(135deg, #667eea 0%, #764ba2 100%)" }}>
-                          <TableCell sx={{ color: "white", fontWeight: "bold" }}>Loại số dư</TableCell>
+                          <TableCell sx={{ color: "white", fontWeight: "bold" }}>Balance Type</TableCell>
                           <TableCell align="right" sx={{ color: "white", fontWeight: "bold" }}>
-                            Số tiền
+                            Amount
                           </TableCell>
                         </TableRow>
                       </TableHead>
@@ -657,7 +670,7 @@ export default function AdminHome() {
                                 }}
                               />
                               <Typography variant="body1" sx={{ fontWeight: 500 }}>
-                                Số dư khả dụng
+                                Available Balance
                               </Typography>
                             </Box>
                           </TableCell>
@@ -685,7 +698,7 @@ export default function AdminHome() {
                                 }}
                               />
                               <Typography variant="body1" sx={{ fontWeight: 500 }}>
-                                Số dư đang giữ
+                                Hold Balance
                               </Typography>
                             </Box>
                           </TableCell>
@@ -718,7 +731,7 @@ export default function AdminHome() {
                                 }}
                               />
                               <Typography variant="body1" sx={{ fontWeight: "bold", fontSize: "1.1rem" }}>
-                                Tổng số dư
+                                Total Balance
                               </Typography>
                             </Box>
                           </TableCell>
@@ -741,7 +754,7 @@ export default function AdminHome() {
               ) : (
                 <Box sx={{ textAlign: "center", p: 4 }}>
                   <Typography color="text.secondary">
-                    Không thể tải thông tin số dư
+                    Unable to load balance information
                   </Typography>
                 </Box>
               )}
@@ -757,7 +770,7 @@ export default function AdminHome() {
                   },
                 }}
               >
-                Đóng
+                Close
               </Button>
             </DialogActions>
           </Dialog>

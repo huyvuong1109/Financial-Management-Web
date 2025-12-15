@@ -1,17 +1,17 @@
 /* Sửa CSS cho .sidebar */
 .sidebar {
-  /* Loại bỏ: position: fixed; */
-  /* Loại bỏ: top: 50px; */
-  /* Loại bỏ: left: 0; */
-  
   width: 220px; /* Độ rộng mặc định khi mở */
   height: calc(100vh - 50px); /* Đảm bảo chiều cao đúng */
   background-color: #34495e;
   color: #ffffff;
-  transition: width 0.3s ease;
+  transition: width 0.3s ease, transform 0.3s ease;
   overflow: hidden;
   font-family: Arial, sans-serif;
   flex-shrink: 0; /* Ngăn sidebar bị co lại */
+  position: fixed;
+  top: 50px;
+  left: 0;
+  z-index: 100;
 }
 
 .sidebar ul {
@@ -39,4 +39,26 @@
 
 .sidebar.closed {
   width: 0;
+}
+
+/* Responsive for mobile */
+@media (max-width: 768px) {
+  .sidebar {
+    position: fixed;
+    top: 50px;
+    left: 0;
+    z-index: 999;
+    height: calc(100vh - 50px);
+    transform: translateX(-100%);
+    box-shadow: 2px 0 8px rgba(0, 0, 0, 0.2);
+  }
+  
+  .sidebar:not(.closed) {
+    transform: translateX(0);
+  }
+  
+  .sidebar.closed {
+    width: 220px;
+    transform: translateX(-100%);
+  }
 }

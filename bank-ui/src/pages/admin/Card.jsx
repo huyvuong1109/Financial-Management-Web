@@ -53,7 +53,7 @@ export default function CardManagement() {
 
   const fetchCards = () => {
     if (!token) {
-      setError("Bạn chưa đăng nhập.");
+      setError("You are not logged in.");
       return;
     }
 
@@ -78,7 +78,7 @@ export default function CardManagement() {
       })
       .catch((err) => {
         console.error(err);
-        setError("Không thể tải danh sách thẻ. Hãy đăng nhập lại.");
+        setError("Unable to load card list. Please log in again.");
       })
       .finally(() => {
         setLoading(false);
@@ -86,7 +86,7 @@ export default function CardManagement() {
   };
 
   const deleteCard = (cardId) => {
-    if (window.confirm("Bạn có chắc muốn xóa thẻ này?")) {
+    if (window.confirm("Are you sure you want to delete this card?")) {
       fetch(`${API_BASE}/${cardId}`, {
         method: "DELETE",
         headers: {
@@ -96,7 +96,7 @@ export default function CardManagement() {
         .then(() => fetchCards())
         .catch((err) => {
           console.error(err);
-          alert("Không thể xóa thẻ.");
+          alert("Unable to delete card.");
         });
     }
   };
@@ -116,7 +116,7 @@ export default function CardManagement() {
       })
       .catch((err) => {
         console.error(err);
-        alert("Không thể cập nhật trạng thái.");
+        alert("Unable to update status.");
       });
   };
 
@@ -183,7 +183,7 @@ export default function CardManagement() {
             <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
               <CreditCardIcon sx={{ fontSize: 40, color: "#1976d2" }} />
               <Typography variant="h4" sx={{ fontWeight: "bold", color: "#1976d2" }}>
-                Quản lý thẻ
+                Card Management
               </Typography>
             </Box>
             {(search || cardTypeFilter || statusFilter) && (
@@ -192,7 +192,7 @@ export default function CardManagement() {
                 onClick={clearFilters}
                 sx={{ textTransform: "none" }}
               >
-                Xóa bộ lọc
+                Clear Filters
               </Button>
             )}
           </Box>
@@ -218,7 +218,7 @@ export default function CardManagement() {
                   <Box sx={{ display: "flex", alignItems: "center", mb: 1 }}>
                     <CreditCardIcon sx={{ mr: 1, fontSize: 30 }} />
                     <Typography variant="body2" sx={{ opacity: 0.9 }}>
-                      Tổng số thẻ
+                      Total Cards
                     </Typography>
                   </Box>
                   <Typography variant="h3" sx={{ fontWeight: "bold" }}>
@@ -240,7 +240,7 @@ export default function CardManagement() {
                   <Box sx={{ display: "flex", alignItems: "center", mb: 1 }}>
                     <CheckCircleIcon sx={{ mr: 1, fontSize: 30 }} />
                     <Typography variant="body2" sx={{ opacity: 0.9 }}>
-                      Thẻ đang hoạt động
+                      Active Cards
                     </Typography>
                   </Box>
                   <Typography variant="h3" sx={{ fontWeight: "bold" }}>
@@ -262,7 +262,7 @@ export default function CardManagement() {
                   <Box sx={{ display: "flex", alignItems: "center", mb: 1 }}>
                     <CancelIcon sx={{ mr: 1, fontSize: 30 }} />
                     <Typography variant="body2" sx={{ opacity: 0.9 }}>
-                      Thẻ không hoạt động
+                      Inactive Cards
                     </Typography>
                   </Box>
                   <Typography variant="h3" sx={{ fontWeight: "bold" }}>
@@ -286,8 +286,8 @@ export default function CardManagement() {
                 <Grid item xs={12} md={4}>
                   <TextField
                     fullWidth
-                    label="Tìm theo username"
-                    placeholder="Nhập tên người dùng..."
+                    label="Search by username"
+                    placeholder="Enter username..."
                     value={search}
                     onChange={(e) => setSearch(e.target.value)}
                     InputProps={{
@@ -300,14 +300,34 @@ export default function CardManagement() {
                   />
                 </Grid>
                 <Grid item xs={12} md={4}>
-                  <FormControl fullWidth>
-                    <InputLabel>Loại thẻ</InputLabel>
+                  <FormControl fullWidth sx={{ minWidth: 250 }}>
+                    <InputLabel id="card-type-label">Card Type</InputLabel>
                     <Select
+                      labelId="card-type-label"
                       value={cardTypeFilter}
-                      label="Loại thẻ"
+                      label="Card Type"
                       onChange={(e) => setCardTypeFilter(e.target.value)}
+                      sx={{
+                        minWidth: 250,
+                        "& .MuiSelect-select": {
+                          py: 1.5,
+                          fontSize: "1rem",
+                          fontWeight: 500,
+                        },
+                      }}
+                      MenuProps={{
+                        PaperProps: {
+                          sx: {
+                            minWidth: 250,
+                            "& .MuiMenuItem-root": {
+                              py: 1.5,
+                              fontSize: "1rem",
+                            },
+                          },
+                        },
+                      }}
                     >
-                      <MenuItem value="">Tất cả</MenuItem>
+                      <MenuItem value="">All</MenuItem>
                       {cardTypes.map((type) => (
                         <MenuItem key={type} value={type}>
                           {type}
@@ -317,16 +337,36 @@ export default function CardManagement() {
                   </FormControl>
                 </Grid>
                 <Grid item xs={12} md={4}>
-                  <FormControl fullWidth>
-                    <InputLabel>Trạng thái</InputLabel>
+                  <FormControl fullWidth sx={{ minWidth: 250 }}>
+                    <InputLabel id="card-status-label">Trạng thái</InputLabel>
                     <Select
+                      labelId="card-status-label"
                       value={statusFilter}
                       label="Trạng thái"
                       onChange={(e) => setStatusFilter(e.target.value)}
+                      sx={{
+                        minWidth: 250,
+                        "& .MuiSelect-select": {
+                          py: 1.5,
+                          fontSize: "1rem",
+                          fontWeight: 500,
+                        },
+                      }}
+                      MenuProps={{
+                        PaperProps: {
+                          sx: {
+                            minWidth: 250,
+                            "& .MuiMenuItem-root": {
+                              py: 1.5,
+                              fontSize: "1rem",
+                            },
+                          },
+                        },
+                      }}
                     >
-                      <MenuItem value="">Tất cả</MenuItem>
-                      <MenuItem value="active">Đang hoạt động</MenuItem>
-                      <MenuItem value="inactive">Không hoạt động</MenuItem>
+                      <MenuItem value="">All</MenuItem>
+                      <MenuItem value="active">Active</MenuItem>
+                      <MenuItem value="inactive">Inactive</MenuItem>
                     </Select>
                   </FormControl>
                 </Grid>
@@ -345,8 +385,8 @@ export default function CardManagement() {
                 <Box sx={{ textAlign: "center", p: 6 }}>
                   <Typography variant="h6" color="text.secondary">
                     {cards.length === 0
-                      ? "Chưa có thẻ nào"
-                      : "Không tìm thấy thẻ phù hợp"}
+                      ? "No cards yet"
+                      : "No matching cards found"}
                   </Typography>
                 </Box>
               ) : (
@@ -355,11 +395,11 @@ export default function CardManagement() {
                     <TableRow sx={{ background: "linear-gradient(135deg, #667eea 0%, #764ba2 100%)" }}>
                       <TableCell sx={{ color: "white", fontWeight: "bold" }}>ID</TableCell>
                       <TableCell sx={{ color: "white", fontWeight: "bold" }}>Username</TableCell>
-                      <TableCell sx={{ color: "white", fontWeight: "bold" }}>Loại thẻ</TableCell>
+                      <TableCell sx={{ color: "white", fontWeight: "bold" }}>Card Type</TableCell>
                       <TableCell sx={{ color: "white", fontWeight: "bold" }}>Ngày hết hạn</TableCell>
                       <TableCell sx={{ color: "white", fontWeight: "bold" }}>Trạng thái</TableCell>
                       <TableCell sx={{ color: "white", fontWeight: "bold" }} align="center">
-                        Hành động
+                        Actions
                       </TableCell>
                     </TableRow>
                   </TableHead>
@@ -390,7 +430,7 @@ export default function CardManagement() {
                         <TableCell>
                           <Chip
                             icon={getStatusIcon(card.status)}
-                            label={card.status === 'active' ? 'Đang hoạt động' : 'Không hoạt động'}
+                            label={card.status === 'active' ? 'Active' : 'Inactive'}
                             color={getStatusColor(card.status)}
                             size="small"
                             sx={{ fontWeight: "bold" }}
@@ -398,7 +438,7 @@ export default function CardManagement() {
                         </TableCell>
                         <TableCell align="center">
                           <Box sx={{ display: "flex", gap: 1, justifyContent: "center" }}>
-                            <Tooltip title="Xóa">
+                            <Tooltip title="Delete">
                               <IconButton
                                 color="error"
                                 onClick={() => deleteCard(card.cardId)}

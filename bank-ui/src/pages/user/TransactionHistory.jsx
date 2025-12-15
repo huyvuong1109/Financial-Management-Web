@@ -367,8 +367,11 @@ export default function TransactionHistory() {
                                                         sx: {
                                                             backgroundColor: "#1a1a2e",
                                                             color: "#ffffff",
+                                                            minWidth: 250,
                                                             "& .MuiMenuItem-root": {
                                                                 color: "#ffffff",
+                                                                py: 1.5,
+                                                                fontSize: "1rem",
                                                                 "&:hover": {
                                                                     backgroundColor: "rgba(102, 126, 234, 0.3)",
                                                                 },
@@ -384,6 +387,7 @@ export default function TransactionHistory() {
                                                 },
                                             }}
                                             sx={{
+                                                minWidth: 250,
                                                 "& .MuiOutlinedInput-root": {
                                                     borderRadius: 2,
                                                     backgroundColor: "rgba(255, 255, 255, 0.05)",
@@ -395,6 +399,11 @@ export default function TransactionHistory() {
                                                     },
                                                     "&.Mui-focused fieldset": {
                                                         borderColor: "#667eea",
+                                                    },
+                                                    "& .MuiSelect-select": {
+                                                        py: 1.5,
+                                                        fontSize: "1rem",
+                                                        fontWeight: 500,
                                                     },
                                                 },
                                                 "& .MuiInputLabel-root": {
@@ -461,6 +470,7 @@ export default function TransactionHistory() {
                             backdropFilter: "blur(10px)",
                             border: "1px solid rgba(0, 0, 0, 0.1)",
                             overflow: "hidden",
+                            overflowX: "auto",
                         }}
                     >
                         <Table>
@@ -471,25 +481,60 @@ export default function TransactionHistory() {
                                         borderBottom: "2px solid #667eea",
                                     }}
                                 >
-                                    <TableCell sx={{ color: "#000000", fontWeight: "bold", fontSize: "0.95rem" }}>
+                                    <TableCell sx={{ 
+                                      color: "#000000", 
+                                      fontWeight: "bold", 
+                                      fontSize: { xs: "0.75rem", sm: "0.95rem" },
+                                      whiteSpace: "nowrap"
+                                    }}>
                                         ID Giao Dịch
                                     </TableCell>
-                                    <TableCell sx={{ color: "#000000", fontWeight: "bold", fontSize: "0.95rem" }}>
+                                    <TableCell sx={{ 
+                                      color: "#000000", 
+                                      fontWeight: "bold", 
+                                      fontSize: { xs: "0.75rem", sm: "0.95rem" },
+                                      whiteSpace: "nowrap"
+                                    }}>
                                         Ngày Giao Dịch
                                     </TableCell>
-                                    <TableCell sx={{ color: "#000000", fontWeight: "bold", fontSize: "0.95rem" }}>
+                                    <TableCell sx={{ 
+                                      color: "#000000", 
+                                      fontWeight: "bold", 
+                                      fontSize: { xs: "0.75rem", sm: "0.95rem" },
+                                      whiteSpace: "nowrap"
+                                    }}>
                                         Số Tiền
                                     </TableCell>
-                                    <TableCell sx={{ color: "#000000", fontWeight: "bold", fontSize: "0.95rem" }}>
+                                    <TableCell sx={{ 
+                                      color: "#000000", 
+                                      fontWeight: "bold", 
+                                      fontSize: { xs: "0.75rem", sm: "0.95rem" },
+                                      whiteSpace: "nowrap"
+                                    }}>
                                         Loại Giao Dịch
                                     </TableCell>
-                                    <TableCell sx={{ color: "#000000", fontWeight: "bold", fontSize: "0.95rem" }}>
+                                    <TableCell sx={{ 
+                                      color: "#000000", 
+                                      fontWeight: "bold", 
+                                      fontSize: { xs: "0.75rem", sm: "0.95rem" },
+                                      whiteSpace: "nowrap"
+                                    }}>
                                         Trạng Thái
                                     </TableCell>
-                                    <TableCell sx={{ color: "#000000", fontWeight: "bold", fontSize: "0.95rem" }}>
+                                    <TableCell sx={{ 
+                                      color: "#000000", 
+                                      fontWeight: "bold", 
+                                      fontSize: { xs: "0.75rem", sm: "0.95rem" },
+                                      display: { xs: "none", md: "table-cell" }
+                                    }}>
                                         Người Gửi
                                     </TableCell>
-                                    <TableCell sx={{ color: "#000000", fontWeight: "bold", fontSize: "0.95rem" }}>
+                                    <TableCell sx={{ 
+                                      color: "#000000", 
+                                      fontWeight: "bold", 
+                                      fontSize: { xs: "0.75rem", sm: "0.95rem" },
+                                      display: { xs: "none", md: "table-cell" }
+                                    }}>
                                         Người Nhận
                                     </TableCell>
                                 </TableRow>
@@ -591,10 +636,20 @@ export default function TransactionHistory() {
                                                         }}
                                                     />
                                                 </TableCell>
-                                                <TableCell sx={{ fontFamily: "monospace", fontSize: "0.9rem", color: "#000000" }}>
+                                                <TableCell sx={{ 
+                                                  fontFamily: "monospace", 
+                                                  fontSize: { xs: "0.75rem", sm: "0.9rem" }, 
+                                                  color: "#000000",
+                                                  display: { xs: "none", md: "table-cell" }
+                                                }}>
                                                     {transaction.fromAccountId || "-"}
                                                 </TableCell>
-                                                <TableCell sx={{ fontFamily: "monospace", fontSize: "0.9rem", color: "#000000" }}>
+                                                <TableCell sx={{ 
+                                                  fontFamily: "monospace", 
+                                                  fontSize: { xs: "0.75rem", sm: "0.9rem" }, 
+                                                  color: "#000000",
+                                                  display: { xs: "none", md: "table-cell" }
+                                                }}>
                                                     {transaction.toAccountId || "-"}
                                                 </TableCell>
                                             </TableRow>

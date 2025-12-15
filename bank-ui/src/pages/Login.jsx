@@ -44,7 +44,7 @@ const Login = () => {
       const decoded = jwtDecode(token);
       console.log('Decoded token:', decoded);
 
-      alert('Đăng nhập thành công!');
+      alert('Login successful!');
 
       // Điều hướng dựa vào role
       if (decoded.role === 'ADMIN') {
@@ -53,7 +53,7 @@ const Login = () => {
         navigate('/user-home');
       }
     } catch (err) {
-      alert('Đăng nhập thất bại: ' + (err.response?.data?.message || err.message));
+      alert('Login failed: ' + (err.response?.data?.message || err.message));
     } finally {
       setLoading(false);
     }
@@ -110,7 +110,7 @@ const Login = () => {
                   MyBank
                 </Typography>
                 <Typography variant="body1" sx={{ mt: 1, opacity: 0.9 }}>
-                  Đăng nhập vào tài khoản của bạn
+                  Login to your account
                 </Typography>
               </Box>
 
@@ -137,7 +137,7 @@ const Login = () => {
                   <TextField
                     fullWidth
                     name="password"
-                    label="Mật khẩu"
+                    label="Password"
                     type={showPassword ? 'text' : 'password'}
                     value={formData.password}
                     onChange={handleChange}
@@ -180,12 +180,12 @@ const Login = () => {
                       boxShadow: '0 4px 15px rgba(102, 126, 234, 0.4)',
                     }}
                   >
-                    {loading ? 'Đang đăng nhập...' : 'Đăng nhập'}
+                    {loading ? 'Logging in...' : 'Login'}
                   </Button>
 
                   <Box sx={{ textAlign: 'center' }}>
                     <Typography variant="body2" sx={{ color: '#666' }}>
-                      Chưa có tài khoản?{' '}
+                      Don't have an account?{' '}
                       <Link
                         component="button"
                         variant="body2"
@@ -199,7 +199,7 @@ const Login = () => {
                           },
                         }}
                       >
-                        Đăng ký ngay
+                        Sign up now
                       </Link>
                     </Typography>
                   </Box>
