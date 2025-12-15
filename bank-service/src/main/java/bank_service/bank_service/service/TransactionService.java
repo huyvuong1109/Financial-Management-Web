@@ -18,6 +18,7 @@ import java.time.LocalDateTime;
 import java.util.Optional;
 import org.springframework.context.annotation.Lazy;
 import org.springframework.beans.factory.annotation.Autowired;
+import java.util.UUID;
 
 @Service
 @RequiredArgsConstructor
@@ -39,7 +40,7 @@ public class TransactionService {
     }
 
     @Transactional
-    public Transaction createTransaction(String fromAccountId, String toAccountId, BigDecimal amount, String categoryId) {
+    public Transaction createTransaction(String fromAccountId, String toAccountId, BigDecimal amount, String categoryId, String fromCardId, String toCardId) {
         if (fromAccountId.equals(toAccountId)) {
             throw new AppException("Cannot transfer to the same account");
         }
@@ -64,13 +65,17 @@ public class TransactionService {
         balanceService.refreshCache(fromAccountId, savedFromBalance);
 
         // tạo transaction
-        Transaction transaction = new Transaction();
-        transaction.setFromAccountId(fromAccountId);
-        transaction.setToAccountId(toAccountId);
-        transaction.setAmount(amount);
-        transaction.setTransactionType(TransactionType.TRANSFER);
-        transaction.setStatus(TransactionStatus.PENDING);
-        transaction.setCategoryId(categoryId);
+        Transaction transaction = Transaction.builder()
+                .id(UUID.randomUUID().toString())
+                .fromAccountId(fromAccountId)
+                .toAccountId(toAccountId)
+                .fromCardId(fromCardId) // Lưu số thẻ gửi
+                .toCardId(toCardId)     // Lưu số thẻ nhận
+                .amount(amount)
+                .transactionType(TransactionType.TRANSFER)
+                .status(TransactionStatus.PENDING)
+                .categoryId(categoryId)
+                .build();
 
         String verificationCode = generateOtp();
         transaction.setVerificationCode(verificationCode);
@@ -311,6 +316,8 @@ public class TransactionService {
         history.setId(tx.getId());
         history.setFromAccountId(tx.getFromAccountId());
         history.setToAccountId(tx.getToAccountId());
+        history.setFromCardId(tx.getFromCardId());
+        history.setToCardId(tx.getToCardId());
         history.setAmount(tx.getAmount());
         history.setStatus(tx.getStatus());
         history.setCompletedAt(LocalDateTime.now());

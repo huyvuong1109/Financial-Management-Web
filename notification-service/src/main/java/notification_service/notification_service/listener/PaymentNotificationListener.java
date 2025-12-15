@@ -27,14 +27,16 @@ public class PaymentNotificationListener {
                     .paymentId(msg.paymentId())
                     .fromAccountId(msg.fromAccountId())
                     .toAccountId(msg.toAccountId())
+                    .fromCardId(msg.fromCardId()) // Lưu thẻ gửi
+                    .toCardId(msg.toCardId())     // Lưu thẻ nhận
                     .amount(msg.amount())
                     .build();
 
-            //Lưu vào database
+            // Lưu vào database
             notificationRepository.save(notificationToSave);
             System.out.println("Notification saved to database for paymentId: " + msg.paymentId());
 
-            //Gửi thông báo tới client qua WebSocket
+            // Gửi thông báo tới client qua WebSocket
             messagingTemplate.convertAndSend("/topic/notifications", msg);
 
             System.out.println("Payment confirmed & notification sent for paymentId: " + msg.paymentId() + ", amount: " + msg.amount());

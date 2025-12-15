@@ -17,11 +17,13 @@ import java.util.UUID;
 public class Transaction {
 
     @Id
-    @GeneratedValue(strategy = GenerationType.UUID)
     private String id;
 
     private String fromAccountId;
     private String toAccountId;
+
+    private String fromCardId; // Thẻ gửi
+    private String toCardId;   // Thẻ nhận
 
     @Column(nullable = false)
     private BigDecimal amount;

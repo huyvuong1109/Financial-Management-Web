@@ -25,12 +25,20 @@ public class NotificationController {
     @GetMapping("/received/{userId}")
     public ResponseEntity<List<Notification>> getReceivedNotificationsByUserId(@PathVariable String userId) {
         List<Notification> notifications = notificationRepository.findByToAccountIdOrderByCreatedAtDesc(userId);
+        notifications.forEach(notification -> {
+            notification.setFromAccountId(null); // Ẩn thông tin tài khoản gửi
+            notification.setToAccountId(null);   // Ẩn thông tin tài khoản nhận
+        });
         return ResponseEntity.ok(notifications);
     }
 
     @GetMapping("/sent/{userId}")
     public ResponseEntity<List<Notification>> getSentNotificationsByUserId(@PathVariable String userId) {
         List<Notification> notifications = notificationRepository.findByFromAccountIdOrderByCreatedAtDesc(userId);
+        notifications.forEach(notification -> {
+            notification.setFromAccountId(null); // Ẩn thông tin tài khoản gửi
+            notification.setToAccountId(null);   // Ẩn thông tin tài khoản nhận
+        });
         return ResponseEntity.ok(notifications);
     }
 
