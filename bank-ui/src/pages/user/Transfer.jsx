@@ -336,9 +336,10 @@ export default function Transfer() {
       },
       body: JSON.stringify(transactionData),
     })
-      .then((response) => {
+      .then(async (response) => {
         if (!response.ok) {
-          throw new Error("Lỗi khi tạo giao dịch.");
+          const errorData = await response.json();
+          throw new Error(errorData.message || "Lỗi khi tạo giao dịch.");
         }
         return response.json();
       })
