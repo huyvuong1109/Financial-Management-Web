@@ -44,8 +44,16 @@ public class TransactionController {
         
         // Chuyển đổi categoryId một cách an toàn
         String categoryId = request.get("categoryId").toString();
-        String fromCardId = (String) request.get("fromCardId"); // Lấy thẻ gửi
-        String toCardId = (String) request.get("toCardId");     // Lấy thẻ nhận
+        
+        // Chuyển đổi cardId một cách an toàn (có thể là Long hoặc String)
+        String fromCardId = null;
+        if (request.get("fromCardId") != null) {
+            fromCardId = request.get("fromCardId").toString();
+        }
+        String toCardId = null;
+        if (request.get("toCardId") != null) {
+            toCardId = request.get("toCardId").toString();
+        }
 
         Transaction tx = transactionService.createTransaction(fromAccountId, toAccountId, amount, categoryId, fromCardId, toCardId);
         return ResponseEntity.ok(tx);

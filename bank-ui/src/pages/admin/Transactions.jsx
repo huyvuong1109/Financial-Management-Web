@@ -510,6 +510,8 @@ const Transactions = () => {
                         <TableCell sx={{ color: "white", fontWeight: "bold" }}>ID</TableCell>
                         <TableCell sx={{ color: "white", fontWeight: "bold" }}>From Account</TableCell>
                         <TableCell sx={{ color: "white", fontWeight: "bold" }}>To Account</TableCell>
+                        <TableCell sx={{ color: "white", fontWeight: "bold" }}>From Card</TableCell>
+                        <TableCell sx={{ color: "white", fontWeight: "bold" }}>To Card</TableCell>
                         <TableCell sx={{ color: "white", fontWeight: "bold" }}>Amount</TableCell>
                         <TableCell sx={{ color: "white", fontWeight: "bold" }}>Type</TableCell>
                         <TableCell sx={{ color: "white", fontWeight: "bold" }}>Status</TableCell>
@@ -553,6 +555,16 @@ const Transactions = () => {
                                 -
                               </Typography>
                             )}
+                          </TableCell>
+                          <TableCell>
+                            <Typography variant="body2" sx={{ fontFamily: "monospace", fontSize: "0.85rem" }}>
+                              {t.fromCardId || "-"}
+                            </Typography>
+                          </TableCell>
+                          <TableCell>
+                            <Typography variant="body2" sx={{ fontFamily: "monospace", fontSize: "0.85rem" }}>
+                              {t.toCardId || "-"}
+                            </Typography>
                           </TableCell>
                           <TableCell>
                             <Typography

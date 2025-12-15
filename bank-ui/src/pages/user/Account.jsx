@@ -222,6 +222,14 @@ export default function Account() {
   
   useEffect(() => {
     fetchBalances();
+    
+    // Polling để tự động refresh balance mỗi 5 giây
+    // Điều này đảm bảo balance được cập nhật ngay khi admin approve transaction
+    const interval = setInterval(() => {
+      fetchBalances();
+    }, 5000); // Refresh mỗi 5 giây
+    
+    return () => clearInterval(interval); // Cleanup khi component unmount
   }, [token]);
   
 

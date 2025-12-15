@@ -144,6 +144,7 @@ export default function UserAppBar() {
     { label: "Tài Khoản", path: "/account" },
     { label: "Lịch sử", path: "/transaction-history" },
     { label: "Báo cáo", path: "/financial-reports" },
+    { label: "Ngân sách", path: "/budget" },
   ];
 
   return (
