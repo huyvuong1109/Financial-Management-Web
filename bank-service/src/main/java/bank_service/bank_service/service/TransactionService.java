@@ -229,13 +229,15 @@ public class TransactionService {
         balanceService.deposit(accountId, amount);
 
         // Tạo một bản ghi giao dịch
-        Transaction transaction = new Transaction();
-        transaction.setFromAccountId("0");
-        transaction.setToAccountId(accountId);
-        transaction.setAmount(amount);
-        transaction.setTransactionType(TransactionType.DEPOSIT);
-        transaction.setStatus(TransactionStatus.APPROVED);
-        transaction.setCategoryId(categoryId);
+        Transaction transaction = Transaction.builder()
+                .id(UUID.randomUUID().toString())
+                .fromAccountId("0")
+                .toAccountId(accountId)
+                .amount(amount)
+                .transactionType(TransactionType.DEPOSIT)
+                .status(TransactionStatus.APPROVED)
+                .categoryId(categoryId)
+                .build();
 
         //return transactionRepository.save(transaction);
         Transaction savedTx = transactionRepository.save(transaction);
@@ -258,13 +260,15 @@ public class TransactionService {
         balanceService.withdraw(accountId, amount);
 
         // Tạo một bản ghi giao dịch
-        Transaction transaction = new Transaction();
-        transaction.setFromAccountId(accountId);
-        transaction.setToAccountId("0");
-        transaction.setAmount(amount);
-        transaction.setTransactionType(TransactionType.WITHDRAWAL);
-        transaction.setStatus(TransactionStatus.APPROVED);
-        transaction.setCategoryId(categoryId);
+        Transaction transaction = Transaction.builder()
+                .id(UUID.randomUUID().toString())
+                .fromAccountId(accountId)
+                .toAccountId("0")
+                .amount(amount)
+                .transactionType(TransactionType.WITHDRAWAL)
+                .status(TransactionStatus.APPROVED)
+                .categoryId(categoryId)
+                .build();
 
         //return transactionRepository.save(transaction);
         Transaction savedTx = transactionRepository.save(transaction);

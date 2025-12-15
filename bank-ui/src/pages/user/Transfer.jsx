@@ -326,6 +326,8 @@ export default function Transfer() {
       toAccountId: receiverInfo.accountId,
       amount: parseFloat(amount),
       categoryId: selectedCategory,
+      fromCardId: cardInfo.cardId,
+      toCardId: receiverInfo.cardId,
     };
 
     fetch(`${BANK_SERVICE_API}/transactions/create`, {

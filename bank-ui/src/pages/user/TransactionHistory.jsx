@@ -537,6 +537,22 @@ export default function TransactionHistory() {
                                     }}>
                                         Người Nhận
                                     </TableCell>
+                                    <TableCell sx={{ 
+                                      color: "#000000", 
+                                      fontWeight: "bold", 
+                                      fontSize: { xs: "0.75rem", sm: "0.95rem" },
+                                      display: { xs: "none", lg: "table-cell" }
+                                    }}>
+                                        Thẻ Gửi
+                                    </TableCell>
+                                    <TableCell sx={{ 
+                                      color: "#000000", 
+                                      fontWeight: "bold", 
+                                      fontSize: { xs: "0.75rem", sm: "0.95rem" },
+                                      display: { xs: "none", lg: "table-cell" }
+                                    }}>
+                                        Thẻ Nhận
+                                    </TableCell>
                                 </TableRow>
                             </TableHead>
                             <TableBody>
@@ -651,6 +667,22 @@ export default function TransactionHistory() {
                                                   display: { xs: "none", md: "table-cell" }
                                                 }}>
                                                     {transaction.toAccountId || "-"}
+                                                </TableCell>
+                                                <TableCell sx={{ 
+                                                  fontFamily: "monospace", 
+                                                  fontSize: { xs: "0.75rem", sm: "0.9rem" }, 
+                                                  color: "#000000",
+                                                  display: { xs: "none", lg: "table-cell" }
+                                                }}>
+                                                    {transaction.fromCardId || "-"}
+                                                </TableCell>
+                                                <TableCell sx={{ 
+                                                  fontFamily: "monospace", 
+                                                  fontSize: { xs: "0.75rem", sm: "0.9rem" }, 
+                                                  color: "#000000",
+                                                  display: { xs: "none", lg: "table-cell" }
+                                                }}>
+                                                    {transaction.toCardId || "-"}
                                                 </TableCell>
                                             </TableRow>
                                         </Fade>
