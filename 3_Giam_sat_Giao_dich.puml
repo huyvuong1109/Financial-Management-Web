@@ -1,0 +1,20 @@
+@startuml
+title Use Case: Giám sát và Truy vấn Giao dịch
+
+left to right direction
+skinparam actorStyle awesome
+
+actor "Người dùng" as User
+actor "Quản trị viên" as Admin
+Admin --|> User
+
+rectangle "Hệ thống" {
+  usecase UC_XemCaNhan as "Xem lịch sử giao dịch cá nhân"
+  usecase UC_XemToanBo as "Xem toàn bộ giao dịch hệ thống"
+  usecase UC_TimKiem as "Tìm kiếm/Lọc giao dịch"
+  
+  User -- UC_XemCaNhan
+  Admin -- UC_XemToanBo
+  UC_XemToanBo ..> UC_TimKiem : <<extends>>
+}
+@enduml

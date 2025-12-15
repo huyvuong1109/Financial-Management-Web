@@ -1,0 +1,20 @@
+@startuml
+title Use Case: Quản lý Người dùng
+
+left to right direction
+skinparam actorStyle awesome
+
+actor "Quản trị viên" as Admin
+
+rectangle "Hệ thống" {
+    usecase UC_Tao as "Tạo người dùng mới"
+    usecase UC_Xem as "Xem danh sách người dùng"
+    usecase UC_Sua as "Chỉnh sửa thông tin người dùng"
+    usecase UC_ThayDoiTrangThai as "Thay đổi trạng thái (Khóa/Mở)"
+    
+    Admin -- UC_Tao
+    Admin -- UC_Xem
+    Admin -- UC_Sua
+    Admin -- UC_ThayDoiTrangThai
+}
+@enduml

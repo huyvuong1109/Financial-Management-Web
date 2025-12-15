@@ -1,0 +1,56 @@
+@startuml
+' Sơ đồ Use Case tổng quan cho Hệ thống Quản lý Tài chính
+
+' Định nghĩa giao diện cho đẹp hơn
+left to right direction
+skinparam packageStyle rect
+skinparam actorStyle awesome
+
+' Định nghĩa các actor (tác nhân)
+actor "Người dùng" as User
+actor "Quản trị viên" as Admin
+
+' Quản trị viên kế thừa các quyền của Người dùng
+Admin --|> User
+
+' Gộp các use case vào trong một hình chữ nhật đại diện cho hệ thống
+rectangle "Hệ thống Quản lý Tài chính" {
+
+  ' Use cases của Người dùng
+  usecase "Đăng ký" as UC_Register
+  usecase "Đăng nhập" as UC_Login
+  usecase "Đăng xuất" as UC_Logout
+  usecase "Quản lý tài khoản" as UC_ManageAccount
+  usecase "Xem lịch sử giao dịch" as UC_ViewHistory
+  usecase "Chuyển tiền" as UC_Transfer
+  usecase "Xác thực giao dịch (OTP)" as UC_Verify
+  usecase "Nhận thông báo Real-time" as UC_GetNotification
+
+  ' Use cases của Quản trị viên
+  usecase "Quản lý người dùng" as UC_ManageUsers
+  usecase "Xem toàn bộ giao dịch" as UC_ViewAllTransactions
+  usecase "Duyệt giao dịch" as UC_ApproveTransaction
+  usecase "Từ chối giao dịch" as UC_RejectTransaction
+  usecase "Nạp tiền vào tài khoản" as UC_Deposit
+
+  ' Mối quan hệ giữa actor và use case
+  User -- UC_Register
+  User -- UC_Login
+  User -- UC_Logout
+  User -- UC_ManageAccount
+  User -- UC_ViewHistory
+  User -- UC_Transfer
+  User -- UC_GetNotification
+
+  ' Mối quan hệ include/extend
+  UC_Transfer ..> UC_Verify : <<includes>>
+
+  ' Use cases chỉ dành cho Admin
+  Admin -- UC_ManageUsers
+  Admin -- UC_ViewAllTransactions
+  Admin -- UC_ApproveTransaction
+  Admin -- UC_RejectTransaction
+  Admin -- UC_Deposit
+}
+
+@enduml

@@ -1,5 +1,5 @@
 # base image JDK 21
-FROM openjdk:21-jdk-slim
+FROM openjdk:27-ea-oraclelinux9
 
 # Đặt thư mục làm việc trong container
 WORKDIR /app

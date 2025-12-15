@@ -1,0 +1,18 @@
+@startuml
+title Use Case: Quản lý Phê duyệt Giao dịch
+
+left to right direction
+skinparam actorStyle awesome
+
+actor "Quản trị viên" as Admin
+
+rectangle "Hệ thống" {
+  usecase UC_XemDanhSach as "Xem danh sách giao dịch chờ"
+  usecase UC_Duyet as "Duyệt giao dịch"
+  usecase UC_TuChoi as "Từ chối giao dịch"
+
+  Admin -- UC_XemDanhSach
+  Admin -- UC_Duyet
+  Admin -- UC_TuChoi
+}
+@enduml

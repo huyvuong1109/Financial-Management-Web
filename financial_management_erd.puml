@@ -1,0 +1,97 @@
+@startuml
+' Sơ đồ ERD cho Hệ thống Quản lý Tài chính (Phiên bản đầy đủ)
+
+' Định nghĩa các thực thể và thuộc tính
+entity "User" as user {
+  + id [PK]
+  --
+  username
+  password
+  email
+  role
+}
+
+entity "Account" as account {
+  + id [PK]
+  --
+  account_number
+  balance
+  --
+  # user_id [FK]
+}
+
+entity "Card" as card {
+  + cardId [PK]
+  --
+  cardType
+  expiryDate
+  status
+  --
+  # accountId [FK]
+}
+
+entity "Category" as category {
+  + id [PK]
+  --
+  name
+  type
+  --
+  # account_id [FK]
+}
+
+entity "Transaction" as transaction {
+  + id [PK]
+  --
+  amount
+  status
+  type
+  created_at
+  completed_at
+  --
+  # from_account_id [FK]
+  # to_account_id [FK]
+  # category_id [FK]
+}
+
+entity "TransactionHistory" as history {
+  + id [PK]
+  --
+  amount
+  status
+  type
+  fromAccountId
+  toAccountId
+  categoryId
+  created_at
+  completed_at
+}
+
+entity "Notification" as notification {
+  + id [PK]
+  --
+  message
+  is_read
+  created_at
+  --
+  # user_id [FK]
+  # transaction_id [FK]
+}
+
+' Định nghĩa các mối quan hệ
+user ||--o{ account : "sở hữu"
+account ||--o{ card : "phát hành"
+account ||--o{ category : "có danh mục"
+
+account }o--|| transaction : "là tài khoản nguồn"
+account }o--|| transaction : "là tài khoản đích"
+
+category ||--o{ transaction : "thuộc"
+
+' Mối quan hệ logic (đồng bộ dữ liệu) giữa Transaction và TransactionHistory
+transaction ..> history : "<<đồng bộ sang>>"
+
+transaction ||--|{ notification : "kích hoạt"
+
+user ||--o{ notification : "nhận"
+
+@enduml

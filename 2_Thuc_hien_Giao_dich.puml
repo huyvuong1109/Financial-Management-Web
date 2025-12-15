@@ -1,0 +1,22 @@
+@startuml
+title Use Case: Thực hiện Giao dịch
+
+left to right direction
+skinparam actorStyle awesome
+
+actor "Người dùng" as User
+
+rectangle "Hệ thống" {
+  usecase UC_ChuyenTien as "Chuyển tiền"
+  usecase UC_NapTien as "Nạp tiền"
+  usecase UC_RutTien as "Rút tiền"
+  usecase UC_XacThuc as "Xác thực giao dịch"
+
+  User -- UC_ChuyenTien
+  User -- UC_NapTien
+  User -- UC_RutTien
+
+  UC_ChuyenTien ..> UC_XacThuc : <<includes>>
+  UC_RutTien ..> UC_XacThuc : <<includes>>
+}
+@enduml

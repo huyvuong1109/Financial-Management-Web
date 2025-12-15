@@ -1,0 +1,23 @@
+@startuml
+title Use Case: Quản lý Tài khoản
+
+left to right direction
+skinparam actorStyle awesome
+
+actor "Người dùng" as User
+actor "Quản trị viên" as Admin
+Admin --|> User
+
+rectangle "Hệ thống" {
+  usecase UC_XemThongTin as "Xem thông tin tài khoản"
+  usecase UC_XemSoDu as "Xem số dư"
+  usecase UC_CapNhat as "Cập nhật thông tin"
+  usecase UC_KhoaMo as "Khóa/Mở khóa tài khoản"
+
+  User -- UC_XemThongTin
+  User -- UC_XemSoDu
+  User -- UC_CapNhat
+  
+  Admin -- UC_KhoaMo
+}
+@enduml
