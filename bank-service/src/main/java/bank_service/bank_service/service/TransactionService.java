@@ -66,7 +66,6 @@ public class TransactionService {
 
         // tạo transaction
         Transaction transaction = Transaction.builder()
-                .id(UUID.randomUUID().toString())
                 .fromAccountId(fromAccountId)
                 .toAccountId(toAccountId)
                 .fromCardId(fromCardId) // Lưu số thẻ gửi

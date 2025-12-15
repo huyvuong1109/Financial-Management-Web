@@ -138,7 +138,7 @@ public class TransactionController {
         BigDecimal amount = new BigDecimal(request.get("amount").toString());
         
         // Chuyển đổi categoryId một cách an toàn
-        String categoryId = request.get("categoryId").toString();
+        String categoryId = (String) request.get("categoryId");
 
         // Đảm bảo người dùng chỉ có thể rút tiền từ tài khoản của chính mình
         String requesterId = authentication.getName();

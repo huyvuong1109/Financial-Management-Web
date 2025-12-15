@@ -264,7 +264,7 @@ export default function UserAppBar() {
                   Số tiền: {parseFloat(noti.amount).toLocaleString('vi-VN')} VNĐ
                 </Typography>
                 <Typography variant="caption" color="text.secondary">
-                  Từ: {noti.fromAccountId} → Đến: {noti.toAccountId}
+                  Từ: {noti.fromCardId} → Đến: {noti.toCardId}
                 </Typography>
               </MenuItem>
             ))

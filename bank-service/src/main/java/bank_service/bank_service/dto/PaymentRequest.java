@@ -13,5 +13,7 @@ public class PaymentRequest {
     private String paymentId;
     private String fromAccountId;
     private String toAccountId;
+    private String fromCardId;
+    private String toCardId;
     private BigDecimal amount;
 }
