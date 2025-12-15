@@ -6,6 +6,7 @@ import CreditCardIcon from "@mui/icons-material/CreditCard";
 import SendIcon from "@mui/icons-material/Send";
 import HistoryIcon from "@mui/icons-material/History";
 import AssessmentIcon from "@mui/icons-material/Assessment";
+import SavingsIcon from "@mui/icons-material/Savings";
 import UserAppBar from "./UserAppBar";
 
 export default function UserHome() {
@@ -49,6 +50,14 @@ export default function UserHome() {
       link: "/financial-reports",
       color: "linear-gradient(135deg, #fa709a 0%, #fee140 100%)",
       delay: 0.5,
+    },
+    {
+      title: "Ngân sách",
+      description: "Lập và theo dõi ngân sách chi tiêu",
+      icon: <SavingsIcon sx={{ fontSize: 56 }} />,
+      link: "/budget",
+      color: "linear-gradient(135deg, #a8edea 0%, #fed6e3 100%)",
+      delay: 0.6,
     },
   ];
 

@@ -15,8 +15,10 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
-import java.lang.String;
 import java.util.Optional;
+import org.springframework.context.annotation.Lazy;
+import org.springframework.beans.factory.annotation.Autowired;
+import java.util.UUID;
 
 @Service
 @RequiredArgsConstructor
@@ -29,9 +31,16 @@ public class TransactionService {
     private final PaymentClient paymentClient;
     private final TransactionHistoryRepository transactionHistoryRepository;
     private final BalanceService balanceService;
+    
+    private BudgetService budgetService;
+    
+    @Autowired
+    public void setBudgetService(@Lazy BudgetService budgetService) {
+        this.budgetService = budgetService;
+    }
 
     @Transactional
-    public Transaction createTransaction(String fromAccountId, String toAccountId, BigDecimal amount, String categoryId) {
+    public Transaction createTransaction(String fromAccountId, String toAccountId, BigDecimal amount, String categoryId, String fromCardId, String toCardId) {
         if (fromAccountId.equals(toAccountId)) {
             throw new AppException("Cannot transfer to the same account");
         }
@@ -51,16 +60,22 @@ public class TransactionService {
         // chuyển từ available -> hold
         fromBalance.setAvailableBalance(fromBalance.getAvailableBalance().subtract(amount));
         fromBalance.setHoldBalance(fromBalance.getHoldBalance().add(amount));
-        balanceRepository.save(fromBalance);
+        Balance savedFromBalance = balanceRepository.save(fromBalance);
+        // Cập nhật Redis cache
+        balanceService.refreshCache(fromAccountId, savedFromBalance);
 
         // tạo transaction
-        Transaction transaction = new Transaction();
-        transaction.setFromAccountId(fromAccountId);
-        transaction.setToAccountId(toAccountId);
-        transaction.setAmount(amount);
-        transaction.setTransactionType(TransactionType.TRANSFER);
-        transaction.setStatus(TransactionStatus.PENDING);
-        transaction.setCategoryId(categoryId);
+        Transaction transaction = Transaction.builder()
+                .id(UUID.randomUUID().toString())
+                .fromAccountId(fromAccountId)
+                .toAccountId(toAccountId)
+                .fromCardId(fromCardId) // Lưu số thẻ gửi
+                .toCardId(toCardId)     // Lưu số thẻ nhận
+                .amount(amount)
+                .transactionType(TransactionType.TRANSFER)
+                .status(TransactionStatus.PENDING)
+                .categoryId(categoryId)
+                .build();
 
         String verificationCode = generateOtp();
         transaction.setVerificationCode(verificationCode);
@@ -132,20 +147,40 @@ public class TransactionService {
 
         Balance fromBalance = balanceRepository.findById(tx.getFromAccountId())
                 .orElseThrow(() -> new AppException("Sender balance not found"));
+        
+        // Tự động tạo balance cho người nhận nếu chưa có
         Balance toBalance = balanceRepository.findById(tx.getToAccountId())
-                .orElseThrow(() -> new AppException("Receiver balance not found"));
+                .orElseGet(() -> {
+                    Balance newBalance = new Balance();
+                    newBalance.setAccountId(tx.getToAccountId());
+                    newBalance.setAvailableBalance(BigDecimal.ZERO);
+                    newBalance.setHoldBalance(BigDecimal.ZERO);
+                    return balanceRepository.save(newBalance);
+                });
 
         // từ hold -> available của người nhận
         fromBalance.setHoldBalance(fromBalance.getHoldBalance().subtract(tx.getAmount()));
-        balanceRepository.save(fromBalance);
+        Balance savedFromBalance = balanceRepository.save(fromBalance);
+        // Cập nhật Redis cache cho người gửi
+        balanceService.refreshCache(tx.getFromAccountId(), savedFromBalance);
 
         toBalance.setAvailableBalance(toBalance.getAvailableBalance().add(tx.getAmount()));
-        balanceRepository.save(toBalance);
+        Balance savedToBalance = balanceRepository.save(toBalance);
+        // Cập nhật Redis cache cho người nhận
+        balanceService.refreshCache(tx.getToAccountId(), savedToBalance);
 
         tx.setStatus(TransactionStatus.APPROVED);
         //return transactionRepository.save(tx);
         Transaction savedTx = transactionRepository.save(tx);
         saveTransactionHistory(savedTx);
+
+        // Kiểm tra và gửi cảnh báo ngân sách cho người gửi
+        try {
+            budgetService.checkAndSendAlerts(tx.getFromAccountId());
+        } catch (Exception e) {
+            // Log error but don't fail the transaction
+            System.err.println("Error checking budget alerts: " + e.getMessage());
+        }
 
         PaymentRequest paymentRequest = new PaymentRequest();
         paymentRequest.setPaymentId(tx.getId());
@@ -268,7 +303,9 @@ public class TransactionService {
     private void rollbackFunds(Balance fromBalance, Transaction tx) {
         fromBalance.setHoldBalance(fromBalance.getHoldBalance().subtract(tx.getAmount()));
         fromBalance.setAvailableBalance(fromBalance.getAvailableBalance().add(tx.getAmount()));
-        balanceRepository.save(fromBalance);
+        Balance saved = balanceRepository.save(fromBalance);
+        // Cập nhật Redis cache
+        balanceService.refreshCache(tx.getFromAccountId(), saved);
     }
 
     private String generateOtp() {
@@ -279,6 +316,8 @@ public class TransactionService {
         history.setId(tx.getId());
         history.setFromAccountId(tx.getFromAccountId());
         history.setToAccountId(tx.getToAccountId());
+        history.setFromCardId(tx.getFromCardId());
+        history.setToCardId(tx.getToCardId());
         history.setAmount(tx.getAmount());
         history.setStatus(tx.getStatus());
         history.setCompletedAt(LocalDateTime.now());

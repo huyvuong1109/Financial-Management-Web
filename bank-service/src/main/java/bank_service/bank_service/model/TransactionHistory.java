@@ -21,6 +21,10 @@ public class TransactionHistory {
     private String fromAccountId;
     private String toAccountId;
 
+    private String fromCardId;
+    private String toCardId;
+
+
     @Column(nullable = false)
     private BigDecimal amount;
 

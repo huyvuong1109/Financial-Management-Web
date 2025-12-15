@@ -20,6 +20,8 @@ public class PaymentService {
                     request.getPaymentId(),
                     request.getFromAccountId(),
                     request.getToAccountId(),
+                    request.getFromCardId(), // Thẻ gửi
+                    request.getToCardId(),   // Thẻ nhận
                     request.getAmount()
             );
             String json = objectMapper.writeValueAsString(message);

@@ -57,6 +57,13 @@ public Account createAccount(Account account) {
     }
     Account saved = accountRepository.save(account);
 
+    // Tự động tạo Balance cho tài khoản mới
+    Balance balance = new Balance();
+    balance.setAccountId(saved.getAccountId());
+    balance.setAvailableBalance(BigDecimal.ZERO);
+    balance.setHoldBalance(BigDecimal.ZERO);
+    balanceRepository.save(balance);
+
     String key = ACCOUNT_KEY_PREFIX + saved.getAccountId();
     redisTemplate.opsForValue().set(key, saved, CACHE_TTL, TimeUnit.MINUTES);
     redisTemplate.delete(ALL_ACCOUNTS_KEY); // Xóa cache list
