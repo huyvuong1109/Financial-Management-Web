@@ -1,9 +1,12 @@
 package bank_service.bank_service.controller;
 
+import bank_service.bank_service.model.Category;
+import bank_service.bank_service.model.CategoryType;
 import bank_service.bank_service.model.Transaction;
 import bank_service.bank_service.model.TransactionHistory;
 import bank_service.bank_service.model.TransactionStatus;
 import bank_service.bank_service.model.TransactionType;
+import bank_service.bank_service.repository.CategoryRepository;
 import bank_service.bank_service.service.TransactionService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
@@ -28,6 +31,7 @@ import java.util.UUID;
 public class TransactionController {
 
     private final TransactionService transactionService;
+    private final CategoryRepository categoryRepository;
 
     // 1. Người dùng tạo giao dịch
     @PostMapping("/create")
@@ -85,16 +89,41 @@ public class TransactionController {
         return ResponseEntity.ok(transactions);
     }
     @PostMapping("/deposit/{accountId}")
-    @PreAuthorize("hasRole('ADMIN')") // Chỉ admin mới được phép nạp tiền
-    public ResponseEntity<Transaction> deposit(
+    public ResponseEntity<?> deposit(
             @PathVariable String accountId,
-            @RequestBody Map<String, Object> request
+            @RequestBody Map<String, Object> request,
+            Authentication authentication
     ) {
-        //String accountId = (String) request.get("accountId");
         BigDecimal amount = new BigDecimal(request.get("amount").toString());
-        
-        // Chuyển đổi categoryId một cách an toàn
-        String categoryId = request.get("categoryId").toString();
+        String categoryId = (String) request.get("categoryId"); // Read categoryId
+
+        // Đảm bảo người dùng chỉ có thể nạp tiền vào tài khoản của chính mình
+        String requesterId = authentication.getName();
+        boolean isAdmin = authentication.getAuthorities().stream()
+                .anyMatch(auth -> auth.getAuthority().equals("ROLE_ADMIN"));
+
+        if (!isAdmin && !requesterId.equals(accountId)) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN)
+                    .body("You are not allowed to deposit to this account.");
+        }
+
+        // Nếu không có categoryId, tự động tìm hoặc tạo category "Lương" của account này
+        if (categoryId == null || categoryId.isEmpty()) {
+            Category salaryCategory = categoryRepository.findByAccountIdAndCategoryName(accountId, "Lương");
+            if (salaryCategory != null) {
+                // Nếu đã có category "Lương", sử dụng nó
+                categoryId = salaryCategory.getCategoryId().toString();
+            } else {
+                // Nếu không tìm thấy category "Lương", tự động tạo mới
+                Category newSalaryCategory = Category.builder()
+                        .categoryName("Lương")
+                        .categoryType(CategoryType.INCOME)
+                        .accountId(accountId)
+                        .build();
+                Category savedCategory = categoryRepository.save(newSalaryCategory);
+                categoryId = savedCategory.getCategoryId().toString();
+            }
+        }
 
         Transaction tx = transactionService.recordDepositTransaction(accountId, amount, categoryId);
         return ResponseEntity.ok(tx);
@@ -106,7 +135,6 @@ public class TransactionController {
             @RequestBody Map<String, Object> request,
             Authentication authentication
     ) {
-        //String accountId = (String) request.get("accountId");
         BigDecimal amount = new BigDecimal(request.get("amount").toString());
         
         // Chuyển đổi categoryId một cách an toàn
@@ -120,6 +148,24 @@ public class TransactionController {
         if (!isAdmin && !requesterId.equals(accountId)) {
             return ResponseEntity.status(HttpStatus.FORBIDDEN)
                     .body("You are not allowed to withdraw from this account.");
+        }
+
+        // Nếu không có categoryId, tự động tìm hoặc tạo category "Cá nhân" của account này
+        if (categoryId == null || categoryId.isEmpty()) {
+            Category personalCategory = categoryRepository.findByAccountIdAndCategoryName(accountId, "Cá nhân");
+            if (personalCategory != null) {
+                // Nếu đã có category "Cá nhân", sử dụng nó
+                categoryId = personalCategory.getCategoryId().toString();
+            } else {
+                // Nếu không tìm thấy category "Cá nhân", tự động tạo mới
+                Category newPersonalCategory = Category.builder()
+                        .categoryName("Cá nhân")
+                        .categoryType(CategoryType.EXPENSE)
+                        .accountId(accountId)
+                        .build();
+                Category savedCategory = categoryRepository.save(newPersonalCategory);
+                categoryId = savedCategory.getCategoryId().toString();
+            }
         }
 
         Transaction tx = transactionService.recordWithdrawalTransaction(accountId, amount, categoryId);

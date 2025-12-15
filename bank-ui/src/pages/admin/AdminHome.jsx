@@ -2,6 +2,7 @@ import React, { useState, useEffect } from "react";
 import AppBar from "./AppBar";
 import Sidebar from "./Sidebar";
 import "./AdminHome.css";
+import { BANK_SERVICE_API } from '../../config/api';
 
 export default function AdminHome() {
   const [sidebarOpen, setSidebarOpen] = useState(true);
@@ -18,7 +19,7 @@ export default function AdminHome() {
   const [error, setError] = useState("");
   const [searchTerm, setSearchTerm] = useState("");
 
-  const API_BASE = "/bankservice/api/accounts";
+  const API_BASE = `${BANK_SERVICE_API}/api/accounts`;
   const token = localStorage.getItem("token");
 
   const fetchAccounts = () => {

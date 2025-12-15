@@ -1,10 +1,36 @@
 import { useParams, useNavigate } from "react-router-dom";
 import { useEffect, useState } from "react";
+import {
+  Container,
+  Typography,
+  Box,
+  Card,
+  CardContent,
+  TextField,
+  Button,
+  Grid,
+  Paper,
+  CircularProgress,
+  Alert,
+  Divider,
+  Select,
+  MenuItem,
+  FormControl,
+  InputLabel,
+} from "@mui/material";
+import ArrowBackIcon from "@mui/icons-material/ArrowBack";
+import SearchIcon from "@mui/icons-material/Search";
+import SendIcon from "@mui/icons-material/Send";
+import VerifiedUserIcon from "@mui/icons-material/VerifiedUser";
+import CreditCardIcon from "@mui/icons-material/CreditCard";
+import UserAppBar from "./UserAppBar";
+import { BANK_SERVICE_API } from '../../config/api';
 
 export default function Transfer() {
   const { cardId } = useParams();
   const navigate = useNavigate();
   const [cardInfo, setCardInfo] = useState(null);
+  const [balances, setBalances] = useState(null);
   const [loading, setLoading] = useState(true);
   const [receiverCardNumber, setReceiverCardNumber] = useState('');
   const [receiverInfo, setReceiverInfo] = useState(null);
@@ -12,10 +38,127 @@ export default function Transfer() {
   const [showOtpInput, setShowOtpInput] = useState(false);
   const [otp, setOtp] = useState('');
   const [transactionId, setTransactionId] = useState(null);
+  const [categories, setCategories] = useState([]);
+  const [selectedCategory, setSelectedCategory] = useState('');
+  const [isCreatingTransaction, setIsCreatingTransaction] = useState(false);
   const token = localStorage.getItem("token");
 
+  // Default categories with emoji
+  const defaultCategories = [
+    { name: "Cá nhân", emoji: "👤", type: "EXPENSE" },
+    { name: "Mua sắm – Dịch vụ", emoji: "🛒", type: "EXPENSE" },
+    { name: "Công việc", emoji: "💼", type: "EXPENSE" },
+    { name: "Giáo dục", emoji: "🎓", type: "EXPENSE" },
+    { name: "Y tế", emoji: "🏥", type: "EXPENSE" },
+    { name: "Sinh hoạt", emoji: "🏠", type: "EXPENSE" },
+    { name: "Khác", emoji: "📦", type: "EXPENSE" },
+  ];
+
+  // Component hiển thị card preview
+  const CardPreview = ({ cardType, cardNumber, expiryDate, customerName }) => {
+    const getCardGradient = (type) => {
+      switch (type) {
+        case "VISA":
+          return "linear-gradient(135deg, #1e3c72 0%, #2a5298 50%, #1e3c72 100%)";
+        case "DEBIT":
+          return "linear-gradient(135deg, #667eea 0%, #764ba2 100%)";
+        case "CREDIT":
+          return "linear-gradient(135deg, #f093fb 0%, #f5576c 100%)";
+        default:
+          return "linear-gradient(135deg, #667eea 0%, #764ba2 100%)";
+      }
+    };
+
+    const getCardLogo = (type) => {
+      switch (type) {
+        case "VISA":
+          return "VISA";
+        case "DEBIT":
+          return "DEBIT";
+        case "CREDIT":
+          return "CREDIT";
+        default:
+          return "CARD";
+      }
+    };
+
+    return (
+      <Box
+        sx={{
+          width: "100%",
+          maxWidth: 400,
+          height: 240,
+          borderRadius: 4,
+          background: getCardGradient(cardType),
+          position: "relative",
+          overflow: "hidden",
+          boxShadow: "0 10px 40px rgba(0,0,0,0.3)",
+          color: "white",
+          p: 3,
+          display: "flex",
+          flexDirection: "column",
+          justifyContent: "space-between",
+          "&::before": {
+            content: '""',
+            position: "absolute",
+            top: -50,
+            right: -50,
+            width: 200,
+            height: 200,
+            borderRadius: "50%",
+            background: "rgba(255,255,255,0.1)",
+          },
+          "&::after": {
+            content: '""',
+            position: "absolute",
+            bottom: -30,
+            left: -30,
+            width: 150,
+            height: 150,
+            borderRadius: "50%",
+            background: "rgba(255,255,255,0.1)",
+          },
+        }}
+      >
+        <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "start", zIndex: 1 }}>
+          <CreditCardIcon sx={{ fontSize: 40, opacity: 0.8 }} />
+          <Typography variant="h6" sx={{ fontWeight: "bold", letterSpacing: 2 }}>
+            {getCardLogo(cardType)}
+          </Typography>
+        </Box>
+        <Box sx={{ zIndex: 1 }}>
+          <Typography variant="body2" sx={{ mb: 1, opacity: 0.9, fontSize: "0.85rem" }}>
+            Số thẻ
+          </Typography>
+          <Typography variant="h6" sx={{ fontFamily: "monospace", letterSpacing: 2, mb: 3 }}>
+            {cardNumber || "**** **** **** ****"}
+          </Typography>
+          <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "end" }}>
+            <Box>
+              <Typography variant="body2" sx={{ opacity: 0.9, fontSize: "0.75rem", mb: 0.5 }}>
+                Hết hạn
+              </Typography>
+              <Typography variant="body1" sx={{ fontFamily: "monospace" }}>
+                {expiryDate || "MM/YY"}
+              </Typography>
+            </Box>
+            <Box sx={{ textAlign: "right" }}>
+              <Typography variant="body2" sx={{ opacity: 0.9, fontSize: "0.75rem", mb: 0.5 }}>
+                Chủ thẻ
+              </Typography>
+              <Typography variant="body1" sx={{ textTransform: "uppercase", fontSize: "0.9rem" }}>
+                {customerName?.split(" ").map(n => n[0]).join("") || "USER"}
+              </Typography>
+            </Box>
+          </Box>
+        </Box>
+      </Box>
+    );
+  };
+
+  // Fetch card info
   useEffect(() => {
-    fetch(`/bankservice/api/cards/${cardId}`, {
+    fetch(`${BANK_SERVICE_API}/api/cards/${cardId}`, {
       method: "GET",
       headers: {
         "Content-Type": "application/json",
@@ -38,6 +181,95 @@ export default function Transfer() {
       });
   }, [cardId, token]);
 
+  // Fetch balances - đồng bộ với Account page
+  const fetchBalances = () => {
+    fetch(`${BANK_SERVICE_API}/api/balances`, {
+      method: "GET",
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    })
+      .then((res) => res.json())
+      .then((data) => setBalances(data))
+      .catch((err) => console.error(err));
+  };
+
+  useEffect(() => {
+    fetchBalances();
+  }, [token]);
+
+  // Fetch categories and create default ones if needed
+  useEffect(() => {
+    if (token) {
+      fetch(`${BANK_SERVICE_API}/api/category/my`, {
+        method: "GET",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+      })
+        .then((response) => {
+          if (!response.ok) {
+            throw new Error("Lỗi khi lấy danh sách phân loại");
+          }
+          return response.json();
+        })
+        .then((data) => {
+          const existingCategories = data || [];
+          
+          // Check if default categories exist, if not create them
+          const categoryNames = existingCategories.map(cat => cat.categoryName);
+          const missingCategories = defaultCategories.filter(
+            defaultCat => !categoryNames.includes(defaultCat.name)
+          );
+
+          // Create missing categories
+          if (missingCategories.length > 0) {
+            const createPromises = missingCategories.map(category => 
+              fetch(`${BANK_SERVICE_API}/api/category`, {
+                method: "POST",
+                headers: {
+                  "Content-Type": "application/json",
+                  Authorization: `Bearer ${token}`,
+                },
+                body: JSON.stringify({
+                  categoryName: category.name,
+                  categoryType: category.type,
+                }),
+              })
+            );
+
+            Promise.all(createPromises)
+              .then(() => {
+                // Fetch categories again after creating
+                return fetch(`${BANK_SERVICE_API}/api/category/my`, {
+                  method: "GET",
+                  headers: {
+                    "Content-Type": "application/json",
+                    Authorization: `Bearer ${token}`,
+                  },
+                });
+              })
+              .then(response => response.json())
+              .then(updatedCategories => {
+                setCategories(updatedCategories || []);
+              })
+              .catch(error => {
+                console.error("Error creating categories:", error);
+                setCategories(existingCategories);
+              });
+          } else {
+            setCategories(existingCategories);
+          }
+        })
+        .catch((error) => {
+          console.error("Error fetching categories:", error);
+          // If fetch fails, use default categories structure (but they won't have IDs)
+          setCategories([]);
+        });
+    }
+  }, [token]);
+
   if (loading) {
     return <p>Đang tải dữ liệu...</p>;
   }
@@ -57,7 +289,7 @@ export default function Transfer() {
   }
 
   const handleSearch = () => {
-    fetch(`/bankservice/api/cards/${receiverCardNumber}`, {
+    fetch(`${BANK_SERVICE_API}/api/cards/${receiverCardNumber}`, {
       method: "GET",
       headers: {
         "Content-Type": "application/json",
@@ -82,18 +314,21 @@ export default function Transfer() {
   };
 
   const handleConfirmTransfer = () => {
-    if (!receiverInfo || !amount) {
-      alert("Vui lòng nhập đủ thông tin người nhận và số tiền.");
+    if (!receiverInfo || !amount || !selectedCategory) {
+      alert("Vui lòng nhập đủ thông tin người nhận, số tiền và phân loại.");
       return;
     }
+
+    setIsCreatingTransaction(true);
 
     const transactionData = {
       fromAccountId: cardInfo.accountId,
       toAccountId: receiverInfo.accountId,
       amount: parseFloat(amount),
+      categoryId: selectedCategory,
     };
 
-    fetch(`/bankservice/transactions/create`, {
+    fetch(`${BANK_SERVICE_API}/transactions/create`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
@@ -101,9 +336,10 @@ export default function Transfer() {
       },
       body: JSON.stringify(transactionData),
     })
-      .then((response) => {
+      .then(async (response) => {
         if (!response.ok) {
-          throw new Error("Lỗi khi tạo giao dịch.");
+          const errorData = await response.json();
+          throw new Error(errorData.message || "Lỗi khi tạo giao dịch.");
         }
         return response.json();
       })
@@ -115,6 +351,9 @@ export default function Transfer() {
       .catch((error) => {
         console.error(error);
         alert(error.message);
+      })
+      .finally(() => {
+        setIsCreatingTransaction(false);
       });
   };
 
@@ -130,7 +369,7 @@ const handleVerifyOtp = () => {
       verificationCode: otp,
   };
 
-  fetch(`/bankservice/transactions/${transactionId}/verify`, {
+  fetch(`${BANK_SERVICE_API}/transactions/${transactionId}/verify`, {
       method: "POST",
       headers: {
           "Content-Type": "application/json",
@@ -149,10 +388,13 @@ const handleVerifyOtp = () => {
       // Kiểm tra status từ dữ liệu trả về
       if (data.status === "AWAITING_APPROVAL") {
           alert("Chuyển khoản thành công!");
+          // Cập nhật số dư ngay lập tức
+          fetchBalances();
           // Reset form sau khi thành công
           setReceiverCardNumber('');
           setReceiverInfo(null);
           setAmount('');
+          setSelectedCategory('');
           setShowOtpInput(false);
           setOtp('');
           setTransactionId(null);
@@ -162,6 +404,7 @@ const handleVerifyOtp = () => {
           setReceiverCardNumber('');
           setReceiverInfo(null);
           setAmount('');
+          setSelectedCategory('');
           setShowOtpInput(false);
           setOtp('');
           setTransactionId(null);
@@ -179,89 +422,419 @@ const handleVerifyOtp = () => {
   });
 };
 
-  if (loading) {
-    return <p>Đang tải dữ liệu...</p>;
-  }
-
-  if (!cardInfo) {
-    return (
-      <div style={{ textAlign: "center", marginTop: "50px" }}>
-        <p>Không tìm thấy thông tin thẻ.</p>
-        <button
-          onClick={() => navigate(-1)}
-          style={{ backgroundColor: "orange", marginTop: "10px" }}
-        >
-          Trở lại
-        </button>
-      </div>
-    );
-  }
-
   return (
-    <div style={{
-      display: 'flex',
-      justifyContent: 'center',
-      alignItems: 'flex-start',
-      padding: '50px',
-      gap: '20px'
-    }}>
-      {/* ... (giữ nguyên div Thông tin thẻ của bạn) */}
-      <div style={{ border: "1px solid #ccc", padding: "15px", flex: 1, maxWidth: '400px' }}>
-        <h3>Thông tin thẻ của bạn</h3>
-        <p>Số thẻ: {cardInfo.cardId}</p>
-        <p>Chủ thẻ: {cardInfo.customerName}</p>
-        <p>Email: {cardInfo.email}</p>
-        <p>Số điện thoại: {cardInfo.phoneNumber}</p>
-        <p>Loại thẻ: {cardInfo.cardType}</p>
-        <p>Ngày hết hạn: {cardInfo.expiryDate}</p>
-        <p>Trạng thái: {cardInfo.status}</p>
-        <p>Số dư khả dụng: {cardInfo.availableBalance.toLocaleString()}</p>
-        <p>Số dư bị giữ: {cardInfo.holdBalance.toLocaleString()}</p>
-        <button
-          onClick={() => navigate(-1)}
-          style={{ backgroundColor: "orange", marginTop: "10px" }}
+    <Box
+      sx={{
+        minHeight: "100vh",
+        position: "relative",
+        "&::before": {
+          content: '""',
+          position: "fixed",
+          top: 0,
+          left: 0,
+          right: 0,
+          bottom: 0,
+          backgroundImage: "url('https://images.unsplash.com/photo-1554224155-6726b3ff858f?ixlib=rb-4.0.3&auto=format&fit=crop&w=2000&q=80')",
+          backgroundSize: "cover",
+          backgroundPosition: "center",
+          backgroundRepeat: "no-repeat",
+          filter: "blur(8px)",
+          opacity: 0.3,
+          zIndex: 0,
+        },
+      }}
+    >
+      {/* Loading Overlay */}
+      {isCreatingTransaction && (
+        <Box
+          sx={{
+            position: "fixed",
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            backgroundColor: "rgba(0, 0, 0, 0.5)",
+            backdropFilter: "blur(4px)",
+            zIndex: 9999,
+            display: "flex",
+            justifyContent: "center",
+            alignItems: "center",
+            flexDirection: "column",
+          }}
         >
-          Trở lại
-        </button>
-      </div>
-      <div style={{ border: "1px solid #ccc", padding: "15px", flex: 1, maxWidth: '400px' }}>
-        <h3>Thông tin người nhận</h3>
-        <label>Số thẻ: </label>
-        <input
-          type="text"
+          <CircularProgress
+            size={60}
+            sx={{
+              color: "#667eea",
+              mb: 2,
+            }}
+          />
+          <Typography
+            variant="h6"
+            sx={{
+              color: "white",
+              fontWeight: "bold",
+              textShadow: "0 2px 4px rgba(0,0,0,0.3)",
+            }}
+          >
+            Đang xử lý chuyển khoản...
+          </Typography>
+          <Typography
+            variant="body2"
+            sx={{
+              color: "rgba(255, 255, 255, 0.8)",
+              mt: 1,
+              textShadow: "0 1px 2px rgba(0,0,0,0.3)",
+            }}
+          >
+            Vui lòng đợi trong giây lát
+          </Typography>
+        </Box>
+      )}
+
+      <UserAppBar />
+      <Container
+        maxWidth="lg"
+        sx={{
+          mt: 4,
+          mb: 4,
+          position: "relative",
+          zIndex: 1,
+          filter: isCreatingTransaction ? "blur(4px)" : "none",
+          pointerEvents: isCreatingTransaction ? "none" : "auto",
+          transition: "filter 0.3s ease",
+        }}
+      >
+        <Box sx={{ display: "flex", alignItems: "center", mb: 4 }}>
+          <Button
+            startIcon={<ArrowBackIcon />}
+            onClick={() => navigate(-1)}
+            sx={{
+              mr: 2,
+              borderRadius: 2,
+              background: "linear-gradient(135deg, #667eea 0%, #764ba2 100%)",
+              "&:hover": {
+                background: "linear-gradient(135deg, #5568d3 0%, #653d8f 100%)",
+              },
+              color: "white",
+            }}
+          >
+            Trở lại
+          </Button>
+          <Typography
+            variant="h4"
+            sx={{
+              fontWeight: "bold",
+              background: "linear-gradient(135deg, #667eea 0%, #764ba2 100%)",
+              WebkitBackgroundClip: "text",
+              WebkitTextFillColor: "transparent",
+            }}
+          >
+            Chuyển khoản
+          </Typography>
+        </Box>
+
+        <Grid container spacing={4}>
+          {/* Thông tin thẻ của bạn */}
+          <Grid item xs={12} md={5}>
+            <Card
+              sx={{
+                boxShadow: "0 8px 32px rgba(0,0,0,0.1)",
+                borderRadius: 3,
+                height: "100%",
+                background: "rgba(255, 255, 255, 0.95)",
+                backdropFilter: "blur(10px)",
+                border: "1px solid rgba(255, 255, 255, 0.18)",
+              }}
+            >
+              <CardContent>
+                <Typography
+                  variant="h5"
+                  gutterBottom
+                  sx={{
+                    fontWeight: "bold",
+                    mb: 3,
+                    background: "linear-gradient(135deg, #667eea 0%, #764ba2 100%)",
+                    WebkitBackgroundClip: "text",
+                    WebkitTextFillColor: "transparent",
+                  }}
+                >
+                  Thông tin thẻ của bạn
+                </Typography>
+                <Divider sx={{ mb: 3 }} />
+                
+                {/* Card Preview */}
+                <Box sx={{ mb: 3, display: "flex", justifyContent: "center" }}>
+                  <CardPreview
+                    cardType={cardInfo.cardType || "VISA"}
+                    cardNumber={
+                      cardInfo.cardId
+                        ? cardInfo.cardId
+                            .toString()
+                            .replace(/\s/g, "")
+                            .replace(/(.{4})/g, "$1 ")
+                            .trim()
+                        : undefined
+                    }
+                    expiryDate={
+                      cardInfo.expiryDate
+                        ? new Date(cardInfo.expiryDate).toLocaleDateString("en-GB", {
+                            month: "2-digit",
+                            year: "2-digit",
+                          })
+                        : ""
+                    }
+                    customerName={cardInfo.customerName}
+                  />
+                </Box>
+
+                {/* Balance Info */}
+                <Box
+                  sx={{
+                    p: 2.5,
+                    borderRadius: 2,
+                    background: "linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%)",
+                  }}
+                >
+                  <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
+                    Số dư khả dụng
+                  </Typography>
+                  <Typography
+                    variant="h5"
+                    sx={{
+                      fontWeight: "bold",
+                      background: "linear-gradient(135deg, #667eea 0%, #764ba2 100%)",
+                      WebkitBackgroundClip: "text",
+                      WebkitTextFillColor: "transparent",
+                      mb: 1,
+                    }}
+                  >
+                    {(balances?.availableBalance ?? 0).toLocaleString()} VNĐ
+                  </Typography>
+                  <Typography variant="body2" color="text.secondary" sx={{ fontSize: "0.85rem" }}>
+                    Đang chờ xử lý: {(balances?.holdBalance ?? 0).toLocaleString()} VNĐ
+                  </Typography>
+                </Box>
+              </CardContent>
+            </Card>
+          </Grid>
+
+          {/* Form chuyển khoản */}
+          <Grid item xs={12} md={7}>
+            <Card
+              sx={{
+                boxShadow: "0 8px 32px rgba(0,0,0,0.1)",
+                borderRadius: 3,
+                background: "rgba(255, 255, 255, 0.95)",
+                backdropFilter: "blur(10px)",
+                border: "1px solid rgba(255, 255, 255, 0.18)",
+              }}
+            >
+              <CardContent>
+                <Typography
+                  variant="h5"
+                  gutterBottom
+                  sx={{
+                    fontWeight: "bold",
+                    mb: 3,
+                    background: "linear-gradient(135deg, #667eea 0%, #764ba2 100%)",
+                    WebkitBackgroundClip: "text",
+                    WebkitTextFillColor: "transparent",
+                  }}
+                >
+                  Thông tin người nhận
+                </Typography>
+                <Divider sx={{ mb: 3 }} />
+
+                <Box sx={{ mb: 3 }}>
+                  <TextField
+                    fullWidth
+                    label="Số thẻ người nhận"
           placeholder="Nhập số thẻ"
           value={receiverCardNumber}
           onChange={(e) => setReceiverCardNumber(e.target.value)}
-        />
-        <br />
-        <button onClick={handleSearch} style={{ marginTop: "10px" }}>Tìm kiếm</button>
+                    sx={{ mb: 2 }}
+                  />
+                  <Button
+                    fullWidth
+                    variant="contained"
+                    startIcon={<SearchIcon />}
+                    onClick={handleSearch}
+                    sx={{ mb: 3 }}
+                  >
+                    Tìm kiếm
+                  </Button>
+                </Box>
+
+                {receiverInfo && (
+                  <Box sx={{ mb: 3 }}>
+                    <Typography
+                      variant="h6"
+                      sx={{
+                        fontWeight: "bold",
+                        mb: 2,
+                        background: "linear-gradient(135deg, #43e97b 0%, #38f9d7 100%)",
+                        WebkitBackgroundClip: "text",
+                        WebkitTextFillColor: "transparent",
+                      }}
+                    >
+                      Thông tin người nhận
+                    </Typography>
+                    <Box sx={{ display: "flex", justifyContent: "center", mb: 2 }}>
+                      <CardPreview
+                        cardType={receiverInfo.cardType || "VISA"}
+                        cardNumber={
+                          receiverInfo.cardId
+                            ? receiverInfo.cardId
+                                .toString()
+                                .replace(/\s/g, "")
+                                .replace(/(.{4})/g, "$1 ")
+                                .trim()
+                            : undefined
+                        }
+                        expiryDate={
+                          receiverInfo.expiryDate
+                            ? new Date(receiverInfo.expiryDate).toLocaleDateString("en-GB", {
+                                month: "2-digit",
+                                year: "2-digit",
+                              })
+                            : ""
+                        }
+                        customerName={receiverInfo.customerName}
+                      />
+                    </Box>
+                    <Paper
+                      sx={{
+                        p: 2,
+                        backgroundColor: "#f1f8e9",
+                        borderRadius: 2,
+                        border: "1px solid rgba(76, 175, 80, 0.2)",
+                      }}
+                    >
+                      <Typography variant="body2" color="text.secondary" sx={{ mb: 0.5 }}>
+                        Tên người nhận
+                      </Typography>
+                      <Typography variant="body1" sx={{ fontWeight: "bold", color: "#2e7d32" }}>
+                        {receiverInfo.customerName}
+                      </Typography>
+                    </Paper>
+                  </Box>
+                )}
+
         {receiverInfo && (
-          <div>
-            <p>Số thẻ người nhận: {receiverInfo.cardId}</p>
-            <p>Tên người nhận: {receiverInfo.customerName}</p>
-            <label>Số tiền: </label>
-            <input
-              type="number"
-              placeholder="Nhập số tiền"
-              value={amount}
-              onChange={(e) => setAmount(e.target.value)}
-            />
-            <button onClick={handleConfirmTransfer} style={{ marginTop: "10px", backgroundColor: "blue", color: "white" }}>Xác nhận chuyển khoản</button>
-          </div>
+                  <Box sx={{ mb: 3 }}>
+                    <Typography variant="h6" gutterBottom sx={{ fontWeight: "bold", mb: 2, color: "#1976d2" }}>
+                      Thông tin chuyển khoản
+                    </Typography>
+                    <Divider sx={{ mb: 3 }} />
+                    
+                    <TextField
+                      fullWidth
+                      label="Số tiền (VNĐ)"
+                      type="number"
+                      placeholder="Nhập số tiền"
+                      value={amount}
+                      onChange={(e) => setAmount(e.target.value)}
+                      sx={{ mb: 2 }}
+                    />
+                    
+                    <FormControl fullWidth sx={{ mb: 2 }}>
+                      <InputLabel>Phân loại</InputLabel>
+                      <Select
+                        value={selectedCategory}
+                        label="Phân loại"
+                        onChange={(e) => setSelectedCategory(e.target.value)}
+                      >
+                        {categories
+                          .filter(cat => defaultCategories.some(dc => dc.name === cat.categoryName))
+                          .sort((a, b) => {
+                            const indexA = defaultCategories.findIndex(dc => dc.name === a.categoryName);
+                            const indexB = defaultCategories.findIndex(dc => dc.name === b.categoryName);
+                            return indexA - indexB;
+                          })
+                          .map((category) => {
+                            const defaultCat = defaultCategories.find(dc => dc.name === category.categoryName);
+                            return (
+                              <MenuItem key={category.categoryId} value={String(category.categoryId)}>
+                                {defaultCat ? `${defaultCat.emoji} ${category.categoryName}` : category.categoryName}
+                              </MenuItem>
+                            );
+                          })}
+                      </Select>
+                    </FormControl>
+                    
+                    <Button
+                      fullWidth
+                      variant="contained"
+                      size="large"
+                      startIcon={<SendIcon />}
+                      onClick={handleConfirmTransfer}
+                      disabled={isCreatingTransaction}
+                      sx={{
+                        borderRadius: 2,
+                        background: "linear-gradient(135deg, #667eea 0%, #764ba2 100%)",
+                        "&:hover": {
+                          background: "linear-gradient(135deg, #5568d3 0%, #653d8f 100%)",
+                        },
+                        "&:disabled": {
+                          background: "linear-gradient(135deg, #9e9e9e 0%, #757575 100%)",
+                          opacity: 0.7,
+                        },
+                        boxShadow: "0 4px 15px rgba(102, 126, 234, 0.4)",
+                        py: 1.5,
+                        fontWeight: "600",
+                      }}
+                    >
+                      Xác nhận chuyển khoản
+                    </Button>
+                  </Box>
         )}
+
         {showOtpInput && (
-          <div style={{ marginTop: "20px" }}>
-            <label>Mã OTP: </label>
-            <input
-              type="text"
+                  <Paper sx={{ p: 3, backgroundColor: "#fff3e0", borderRadius: 2 }}>
+                    <Box sx={{ display: "flex", alignItems: "center", mb: 2 }}>
+                      <VerifiedUserIcon sx={{ mr: 1, color: "#ff9800" }} />
+                      <Typography variant="h6" sx={{ fontWeight: "bold" }}>
+                        Xác thực OTP
+                      </Typography>
+                    </Box>
+                    <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
+                      Mã OTP đã được gửi tới email của bạn. Vui lòng nhập mã OTP để xác nhận.
+                    </Typography>
+                    <TextField
+                      fullWidth
+                      label="Mã OTP"
               placeholder="Nhập mã OTP"
               value={otp}
               onChange={(e) => setOtp(e.target.value)}
+                      sx={{ mb: 2 }}
             />
-            <button onClick={handleVerifyOtp} style={{ marginTop: "10px", backgroundColor: "green", color: "white" }}>Xác nhận OTP</button>
-          </div>
+                    <Button
+                      fullWidth
+                      variant="contained"
+                      size="large"
+                      startIcon={<VerifiedUserIcon />}
+                      onClick={handleVerifyOtp}
+                      sx={{
+                        borderRadius: 2,
+                        background: "linear-gradient(135deg, #43e97b 0%, #38f9d7 100%)",
+                        "&:hover": {
+                          background: "linear-gradient(135deg, #38d973 0%, #2ee5c5 100%)",
+                        },
+                        boxShadow: "0 4px 15px rgba(67, 233, 123, 0.4)",
+                        py: 1.5,
+                        fontWeight: "600",
+                      }}
+                    >
+                      Xác nhận OTP
+                    </Button>
+                  </Paper>
         )}
-      </div>
-    </div>
+              </CardContent>
+            </Card>
+          </Grid>
+        </Grid>
+      </Container>
+    </Box>
   );
 }

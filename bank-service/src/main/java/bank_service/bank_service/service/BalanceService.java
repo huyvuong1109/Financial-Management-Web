@@ -87,6 +87,21 @@ public class BalanceService {
         redisTemplate.opsForValue().set(key, balance, CACHE_TTL, TimeUnit.MINUTES);
     }
 
+    /**
+     * Cập nhật cache cho balance (public method để các service khác có thể gọi)
+     */
+    public void refreshCache(String accountId, Balance balance) {
+        updateCache(accountId, balance);
+    }
+
+    /**
+     * Xóa cache cho balance
+     */
+    public void invalidateCache(String accountId) {
+        String key = BALANCE_KEY_PREFIX + accountId;
+        redisTemplate.delete(key);
+    }
+
     private void checkActiveCard(String accountId) {
         boolean hasActiveCard = cardRepository.existsByAccountIdAndStatus(accountId, "active");
         if (!hasActiveCard) {

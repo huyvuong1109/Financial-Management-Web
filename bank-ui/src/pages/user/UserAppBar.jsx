@@ -17,6 +17,7 @@ import SockJS from "sockjs-client";
 // import Stomp from "stompjs";
 import { Client } from '@stomp/stompjs';
 import { jwtDecode } from "jwt-decode";
+import { NOTIFICATION_SERVICE_API, WS_URL } from '../../config/api';
 
 export default function UserAppBar() {
   const navigate = useNavigate();
@@ -42,12 +43,12 @@ export default function UserAppBar() {
   useEffect(() => {
     if (userId) {
       const token = localStorage.getItem("token");
-      fetch(`/api/notifications/received/${userId}`, {
+      fetch(`${NOTIFICATION_SERVICE_API}/received/${userId}`, {
         headers: { Authorization: `Bearer ${token}` },
       })
         .then((response) => response.json())
         .then((receivedNotis) => {
-          fetch(`/api/notifications/sent/${userId}`, {
+          fetch(`${NOTIFICATION_SERVICE_API}/sent/${userId}`, {
             headers: { Authorization: `Bearer ${token}` },
           })
             .then((response) => response.json())
@@ -88,7 +89,7 @@ export default function UserAppBar() {
   useEffect(() => {
     if (!userId) return;
 
-    const socket = new SockJS("/ws");
+    const socket = new SockJS(WS_URL);
     const stomp = new Client({ webSocketFactory: () => socket });
 
     stomp.onConnect = () => {
@@ -127,49 +128,125 @@ export default function UserAppBar() {
   const handleCloseMenu = () => setAnchorEl(null);
 
   return (
-    <AppBar position="static" color="primary">
+    <AppBar 
+      position="static" 
+      sx={{ 
+        background: "linear-gradient(135deg, #667eea 0%, #764ba2 100%)",
+        boxShadow: 3
+      }}
+    >
       <Toolbar>
         {/* Logo */}
         <Typography
-          variant="h6"
+          variant="h5"
           component={Link}
           to="/user-home"
-          style={{ textDecoration: "none", color: "white", fontWeight: "bold" }}
+          sx={{ 
+            textDecoration: "none", 
+            color: "white", 
+            fontWeight: "bold",
+            mr: 4,
+            "&:hover": { opacity: 0.8 }
+          }}
         >
           MyBank
         </Typography>
   
         {/* Menu */}
-        <Box sx={{ flexGrow: 1, display: "flex", gap: 2, ml: 4 }}>
-          <Button color="inherit" component={Link} to="/user-home">
+        <Box sx={{ flexGrow: 1, display: "flex", gap: 1 }}>
+          <Button 
+            color="inherit" 
+            component={Link} 
+            to="/user-home"
+            sx={{ 
+              "&:hover": { backgroundColor: "rgba(255,255,255,0.1)" },
+              borderRadius: 1
+            }}
+          >
             Trang Chủ
           </Button>
-          <Button color="inherit" component={Link} to="/account">
+          <Button 
+            color="inherit" 
+            component={Link} 
+            to="/account"
+            sx={{ 
+              "&:hover": { backgroundColor: "rgba(255,255,255,0.1)" },
+              borderRadius: 1
+            }}
+          >
             Tài Khoản
           </Button>
-          {/* THÊM MỚI: Nút Lịch sử */}
-          <Button color="inherit" component={Link} to="/transaction-history">
+          <Button 
+            color="inherit" 
+            component={Link} 
+            to="/transaction-history"
+            sx={{ 
+              "&:hover": { backgroundColor: "rgba(255,255,255,0.1)" },
+              borderRadius: 1
+            }}
+          >
             Lịch sử
           </Button>
-          <Button color="inherit">Dịch Vụ</Button>
-          <Button color="inherit">Liên Hệ</Button>
+          <Button 
+            color="inherit" 
+            component={Link} 
+            to="/financial-reports"
+            sx={{ 
+              "&:hover": { backgroundColor: "rgba(255,255,255,0.1)" },
+              borderRadius: 1
+            }}
+          >
+            Báo cáo
+          </Button>
+          <Button 
+            color="inherit" 
+            component={Link} 
+            to="/budget"
+            sx={{ 
+              "&:hover": { backgroundColor: "rgba(255,255,255,0.1)" },
+              borderRadius: 1
+            }}
+          >
+            Ngân sách
+          </Button>
         </Box>
   
         {/* Icon thông báo */}
-        <IconButton color="inherit" onClick={handleOpenMenu}>
+        <IconButton 
+          color="inherit" 
+          onClick={handleOpenMenu}
+          sx={{ 
+            mr: 2,
+            "&:hover": { backgroundColor: "rgba(255,255,255,0.1)" }
+          }}
+        >
           <Badge badgeContent={unreadCount} color="error">
             <NotificationsIcon />
           </Badge>
         </IconButton>
   
-        <Menu anchorEl={anchorEl} open={Boolean(anchorEl)} onClose={handleCloseMenu}>
+        <Menu 
+          anchorEl={anchorEl} 
+          open={Boolean(anchorEl)} 
+          onClose={handleCloseMenu}
+          PaperProps={{
+            sx: {
+              maxHeight: 400,
+              width: 350,
+              mt: 1
+            }
+          }}
+        >
           {notifications.length === 0 ? (
-            <MenuItem>Không có thông báo</MenuItem>
+            <MenuItem>
+              <Typography variant="body2" color="text.secondary">
+                Không có thông báo
+              </Typography>
+            </MenuItem>
           ) : (
             notifications.map((noti, idx) => (
               <MenuItem
                 key={noti.paymentId || idx}
-                // THAY ĐỔI: Thêm hàm onClick để chuyển hướng
                 onClick={() => {
                   handleCloseMenu();
                   navigate("/transaction-history");
@@ -177,24 +254,21 @@ export default function UserAppBar() {
                 sx={{
                   flexDirection: 'column',
                   alignItems: 'flex-start',
-                  borderBottom: '1px solid #eee',
-                  padding: '10px 16px'
+                  borderBottom: idx < notifications.length - 1 ? '1px solid #eee' : 'none',
+                  padding: '12px 16px',
+                  "&:hover": { backgroundColor: "#f5f5f5" }
                 }}
               >
-                {/* Hiển thị thông báo chi tiết */}
-                <Typography variant="subtitle2" sx={{ fontWeight: 'bold' }}>
+                <Typography variant="subtitle2" sx={{ fontWeight: 'bold', mb: 0.5 }}>
                   {noti.fromAccountId === userId
                     ? `Bạn đã chuyển tiền`
                     : `Bạn đã nhận được tiền`}
                 </Typography>
-                <Typography variant="body2" color="text.secondary">
-                  Số tiền: {noti.amount} VNĐ
+                <Typography variant="body2" color="text.secondary" sx={{ fontWeight: 'bold', color: '#1976d2' }}>
+                  Số tiền: {parseFloat(noti.amount).toLocaleString('vi-VN')} VNĐ
                 </Typography>
                 <Typography variant="caption" color="text.secondary">
-                  Từ tài khoản: {noti.fromAccountId}
-                </Typography>
-                <Typography variant="caption" color="text.secondary">
-                  Đến tài khoản: {noti.toAccountId}
+                  Từ: {noti.fromAccountId} → Đến: {noti.toAccountId}
                 </Typography>
               </MenuItem>
             ))
@@ -202,7 +276,16 @@ export default function UserAppBar() {
         </Menu>
   
         {/* Logout */}
-        <Button variant="contained" color="secondary" onClick={handleLogout}>
+        <Button 
+          variant="contained" 
+          onClick={handleLogout}
+          sx={{
+            backgroundColor: "#ff5722",
+            "&:hover": { backgroundColor: "#e64a19" },
+            borderRadius: 2,
+            px: 3
+          }}
+        >
           Đăng Xuất
         </Button>
       </Toolbar>
